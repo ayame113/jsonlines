@@ -36,6 +36,9 @@ await build({
     bugs: {
       url: "https://github.com/ayame113/jsonlines/issues",
     },
+    publishConfig: {
+      registry: "https://npm.pkg.github.com",
+    },
   },
   rootTestDir: projectRootDir,
   testPattern: "mod_test.ts",
