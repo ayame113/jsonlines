@@ -45,7 +45,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.5/mod.ts";
+ * import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -108,7 +108,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.5/mod.ts";
+ * import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
