@@ -1,5 +1,7 @@
 # jsonlines-web
 
+[![npm version](https://badge.fury.io/js/jsonlines-web.svg)](https://badge.fury.io/js/jsonlines-web)
+
 Web stream based jsonlines decoder/encoder
 
 - ✅browser
@@ -21,6 +23,9 @@ each JSON.
 
 ##### Deno
 
+https://deno.land/x/jsonlines/
+https://doc.deno.land/https://deno.land/x/jsonlines/mod.ts
+
 ```ts
 import {
   ConcatenatedJSONStream,
@@ -35,6 +40,21 @@ import {
   ConcatenatedJSONStream,
   JSONLinesStream,
 } from "https://deno.land/x/jsonlines@v0.0.4/js/mod.js";
+```
+
+##### Node.js
+
+https://www.npmjs.com/package/jsonlines-web
+
+```shell
+npm install jsonlines-web
+```
+
+```js
+import { ConcatenatedJSONStream, JSONLinesStream } from "jsonlines-web";
+// if you need
+// import { TextDecoderStream } from "node:stream/web";
+// import { fetch } from "undici";
 ```
 
 ## Usage
