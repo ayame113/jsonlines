@@ -4,6 +4,15 @@
 // AsyncIterator.next called, then call ReadableStream(1).pull.
 // ReadableStream(1) and WritableStream are buffered by TransformStream.
 
+declare global {
+  // deno-lint-ignore no-explicit-any
+  interface ReadableStream<R = any> {
+    [Symbol.asyncIterator](options?: {
+      preventCancel?: boolean;
+    }): AsyncIterableIterator<R>;
+  }
+}
+
 // polyfill for ReadableStream.prototype[Symbol.asyncIterator]
 // https://bugs.chromium.org/p/chromium/issues/detail?id=929585#c10
 if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
@@ -28,13 +37,20 @@ export type JSONValue =
   | number
   | boolean;
 
+// avoid Node type error
+declare abstract class T extends TransformStream<string, JSONValue> {}
+/** QueuingStrategy<string> | undefined */
+type QueuingStrategyString = ConstructorParameters<typeof T>[1];
+/** QueuingStrategy<JSONValue> | undefined */
+type QueuingStrategyJSONValue = ConstructorParameters<typeof T>[2];
+
 export interface JSONLinesStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  writableStrategy?: QueuingStrategy<string>;
+  writableStrategy?: QueuingStrategyString;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readableStrategy?: QueuingStrategy<JSONValue>;
+  readableStrategy?: QueuingStrategyJSONValue;
 }
 
 /** Convert an iterator into a TransformStream. */

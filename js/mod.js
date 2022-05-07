@@ -1,8 +1,3 @@
-// implemented to be streamed as:
-// WritableStream -> ReadableStream(1) -> AsyncIterator -> ReadableStream(2)
-// ReadableStream(2).pull called, then call AsyncIterator.next.
-// AsyncIterator.next called, then call ReadableStream(1).pull.
-// ReadableStream(1) and WritableStream are buffered by TransformStream.
 // polyfill for ReadableStream.prototype[Symbol.asyncIterator]
 // https://bugs.chromium.org/p/chromium/issues/detail?id=929585#c10
 if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
