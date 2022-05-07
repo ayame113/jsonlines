@@ -58,6 +58,31 @@ Deno.test({
   async fn() {
     await assertValidParse(
       ConcatenatedJSONStream,
+      ["0"],
+      [0],
+    );
+    await assertValidParse(
+      ConcatenatedJSONStream,
+      ["100"],
+      [100],
+    );
+    await assertValidParse(
+      ConcatenatedJSONStream,
+      ['100 200 {"foo": "bar"}'],
+      [100, 200, { foo: "bar" }],
+    );
+    await assertValidParse(
+      ConcatenatedJSONStream,
+      ['"foo"'],
+      ["foo"],
+    );
+    await assertValidParse(
+      ConcatenatedJSONStream,
+      ['"foo""bar"{"foo": "bar"}'],
+      ["foo", "bar", { foo: "bar" }],
+    );
+    await assertValidParse(
+      ConcatenatedJSONStream,
       ['{"foo": "bar"}'],
       [{ foo: "bar" }],
     );
