@@ -17,6 +17,10 @@ This library supports JSON in the following formats:
 See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the use of
 each JSON.
 
+## Usage
+
+A working example can be found at [./testdata/test.ts](./testdata/test.ts).
+
 ##### How to parse JSON Lines
 
 ./json-lines.jsonl
@@ -28,7 +32,7 @@ each JSON.
 ```
 
 ```ts
-import { JSONLinesStream } from "./mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
 const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
 const { body } = await fetch(`${url}`);
@@ -60,7 +64,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesStream } from "./mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
 const url = new URL("./testdata/json-seq.json-seq", import.meta.url);
 const { body } = await fetch(`${url}`);
@@ -84,7 +88,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONStream } from "./mod.ts";
+import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
 const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
 const { body } = await fetch(`${url}`);

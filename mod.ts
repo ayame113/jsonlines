@@ -60,6 +60,7 @@ function createStream(
 
 /**
  * stream to parse JSONLines.
+ *
  * ```ts
  * import { JSONLinesStream } from "./mod.ts";
  *
@@ -74,6 +75,7 @@ function createStream(
  *   console.log(data);
  * }
  * ```
+ *
  * @param options
  * @param options.separator a character to separate JSON. The character length must be 1. The default is '\n'.
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
@@ -132,6 +134,7 @@ export class JSONLinesStream implements TransformStream<string, JSONValue> {
 
 /**
  * stream to parse concatenated JSON.
+ *
  * ```ts
  * import { ConcatenatedJSONStream } from "./mod.ts";
  *
@@ -146,6 +149,7 @@ export class JSONLinesStream implements TransformStream<string, JSONValue> {
  *   console.log(data);
  * }
  * ```
+ *
  * @param options
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
