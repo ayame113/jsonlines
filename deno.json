@@ -1,7 +1,7 @@
 {
   "tasks": {
     "test": "deno test --allow-read=. --doc --ignore=./js/mod.js",
-    "test:coverage": "deno task test --coverage=coverage",
+    "test:coverage": "deno task test -- --coverage=coverage",
     "test:lint": "deno lint",
     "test:fmt": "deno fmt --check",
     "fmt": "deno fmt",
