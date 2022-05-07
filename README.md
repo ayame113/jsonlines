@@ -142,6 +142,13 @@ But this can be parsed:
 100 200 {"foo": "bar"}
 ```
 
+## note
+
+This library contains
+[ReadableStream.prototype[Symbol.asyncIterator]](https://github.com/whatwg/streams/issues/778)
+polyfills. Importing this library will automatically enable
+ReadableStream.prototype[Symbol.asyncIterator].
+
 ## develop
 
 need to manually `deno task transpile` before release.
