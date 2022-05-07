@@ -17,6 +17,26 @@ This library supports JSON in the following formats:
 See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the use of
 each JSON.
 
+## install or import
+
+##### Deno
+
+```ts
+import {
+  ConcatenatedJSONStream,
+  JSONLinesStream,
+} from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
+```
+
+##### browser
+
+```ts
+import {
+  ConcatenatedJSONStream,
+  JSONLinesStream,
+} from "https://deno.land/x/jsonlines@v0.0.2/js/mod.js";
+```
+
 ## Usage
 
 A working example can be found at [./testdata/test.ts](./testdata/test.ts).
