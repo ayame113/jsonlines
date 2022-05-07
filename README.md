@@ -32,7 +32,7 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
 const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
 const { body } = await fetch(`${url}`);
@@ -64,7 +64,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
 const url = new URL("./testdata/json-seq.json-seq", import.meta.url);
 const { body } = await fetch(`${url}`);
@@ -88,7 +88,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
 const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
 const { body } = await fetch(`${url}`);
