@@ -2,6 +2,7 @@
   "tasks": {
     "test": "deno test --allow-read=.",
     "test:coverage": "deno test --allow-read=. --coverage=coverage",
-    "check": "deno check ./mod.ts"
+    "check": "deno check ./mod.ts",
+    "transpile": "deno run --allow-read=. --allow-write=. ./dev/transpile.ts && deno task test"
   }
 }

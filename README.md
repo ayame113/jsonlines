@@ -118,3 +118,7 @@ But this can be parsed:
 ```json
 100 200 {"foo": "bar"}
 ```
+
+## develop
+
+need to manually `deno task transpile` before release.
