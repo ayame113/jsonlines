@@ -34,8 +34,9 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```ts
 import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
-const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
-const { body } = await fetch(`${url}`);
+const { body } = await fetch(
+  "https://deno.land/x/jsonlines@v0.0.2/testdata/json-lines.jsonl",
+);
 
 const readable = body!
   .pipeThrough(new TextDecoderStream())
@@ -66,8 +67,9 @@ for await (const data of readable) {
 ```ts
 import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
-const url = new URL("./testdata/json-seq.json-seq", import.meta.url);
-const { body } = await fetch(`${url}`);
+const { body } = await fetch(
+  "https://deno.land/x/jsonlines@v0.0.2/testdata/json-seq.json-seq",
+);
 
 const recordSeparator = "\x1E";
 const readable = body!
@@ -90,8 +92,9 @@ for await (const data of readable) {
 ```ts
 import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.2/mod.ts";
 
-const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
-const { body } = await fetch(`${url}`);
+const { body } = await fetch(
+  "https://deno.land/x/jsonlines@v0.0.2/testdata/concat-json.concat-json",
+);
 
 const readable = body!
   .pipeThrough(new TextDecoderStream())
