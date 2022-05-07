@@ -25,7 +25,7 @@ each JSON.
 import {
   ConcatenatedJSONStream,
   JSONLinesStream,
-} from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
+} from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 ```
 
 ##### browser
@@ -34,7 +34,7 @@ import {
 import {
   ConcatenatedJSONStream,
   JSONLinesStream,
-} from "https://deno.land/x/jsonlines@v0.0.6/js/mod.js";
+} from "https://deno.land/x/jsonlines@v0.0.7/js/mod.js";
 ```
 
 ## Usage
@@ -52,10 +52,10 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.6/testdata/json-lines.jsonl",
+  "https://deno.land/x/jsonlines@v0.0.7/testdata/json-lines.jsonl",
 );
 
 const readable = body!
@@ -85,10 +85,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
+import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.6/testdata/json-seq.json-seq",
+  "https://deno.land/x/jsonlines@v0.0.7/testdata/json-seq.json-seq",
 );
 
 const recordSeparator = "\x1E";
@@ -110,10 +110,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.6/mod.ts";
+import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.6/testdata/concat-json.concat-json",
+  "https://deno.land/x/jsonlines@v0.0.7/testdata/concat-json.concat-json",
 );
 
 const readable = body!
