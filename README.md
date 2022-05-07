@@ -1,11 +1,15 @@
 # jsonlines-web
 
+[![deno module](https://shield.deno.dev/x/jsonlines)](https://deno.land/x/jsonlines)
+[![deno doc](https://doc.deno.land/badge.svg)](https://doc.deno.land/https://deno.land/x/jsonlines/mod.ts)
 [![npm version](https://badge.fury.io/js/jsonlines-web.svg)](https://badge.fury.io/js/jsonlines-web)
+[![ci](https://github.com/ayame113/jsonlines/actions/workflows/ci.yml/badge.svg)](https://github.com/ayame113/jsonlines/actions)
+[![codecov](https://codecov.io/gh/ayame113/jsonlines/branch/main/graph/badge.svg?token=GsQ5af4QLn)](https://codecov.io/gh/ayame113/jsonlines)
 
 Web stream based jsonlines decoder/encoder
 
-- ✅browser
 - ✅Deno
+- ✅browser
 - ✅Node.js
 
 This library supports JSON in the following formats:
