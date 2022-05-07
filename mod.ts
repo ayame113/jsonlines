@@ -60,6 +60,20 @@ function createStream(
 
 /**
  * stream to parse JSONLines.
+ * ```ts
+ * import { JSONLinesStream } from "./mod.ts";
+ *
+ * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
+ * const { body } = await fetch(`${url}`);
+ *
+ * const readable = body!
+ *   .pipeThrough(new TextDecoderStream())
+ *   .pipeThrough(new JSONLinesStream());
+ *
+ * for await (const data of readable) {
+ *   console.log(data);
+ * }
+ * ```
  * @param options
  * @param options.separator a character to separate JSON. The character length must be 1. The default is '\n'.
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
@@ -118,6 +132,20 @@ export class JSONLinesStream implements TransformStream<string, JSONValue> {
 
 /**
  * stream to parse concatenated JSON.
+ * ```ts
+ * import { ConcatenatedJSONStream } from "./mod.ts";
+ *
+ * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
+ * const { body } = await fetch(`${url}`);
+ *
+ * const readable = body!
+ *   .pipeThrough(new TextDecoderStream())
+ *   .pipeThrough(new ConcatenatedJSONStream());
+ *
+ * for await (const data of readable) {
+ *   console.log(data);
+ * }
+ * ```
  * @param options
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.

@@ -1,10 +1,19 @@
-# jsonlines
+# jsonlines-web
 
 Web stream based jsonlines decoder/encoder
 
 - ✅browser
 - ✅Deno
 - ✅Node.js
+
+- Line-delimited JSON (JSONLinesStream)
+  - NDJSON
+  - JSON lines
+- Record separator-delimited JSON (JSONLinesStream)
+- Concatenated JSON (ConcatenatedJSONStream)
+
+See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the use of
+each JSON.
 
 ##### How to parse JSON Lines
 
@@ -19,7 +28,7 @@ Web stream based jsonlines decoder/encoder
 ```ts
 import { JSONLinesStream } from "./mod.ts";
 
-const url = new URL("./json-lines.jsonl", import.meta.url);
+const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
 const { body } = await fetch(`${url}`);
 
 const readable = body!
@@ -51,7 +60,7 @@ for await (const data of readable) {
 ```ts
 import { JSONLinesStream } from "./mod.ts";
 
-const url = new URL("./json-seq.json-seq", import.meta.url);
+const url = new URL("./testdata/json-seq.json-seq", import.meta.url);
 const { body } = await fetch(`${url}`);
 
 const recordSeparator = "\x1E";
@@ -75,7 +84,7 @@ for await (const data of readable) {
 ```ts
 import { ConcatenatedJSONStream } from "./mod.ts";
 
-const url = new URL("./concat-json.concat-json", import.meta.url);
+const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
 const { body } = await fetch(`${url}`);
 
 const readable = body!
