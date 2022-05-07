@@ -6,6 +6,16 @@
     "test:fmt": "deno fmt --check",
     "fmt": "deno fmt",
     "check": "deno check ./mod.ts",
-    "transpile": "deno run --allow-read=. --allow-write=. ./dev/transpile.ts && deno task fmt && deno task test"
+    "transpile": "deno run --allow-read=. --allow-write=. ./dev/transpile.ts && deno task test"
+  },
+  "lint": {
+    "files": {
+      "exclude": ["./js/"]
+    }
+  },
+  "fmt": {
+    "files": {
+      "exclude": ["./js/"]
+    }
   }
 }
