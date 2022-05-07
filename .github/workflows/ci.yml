@@ -13,9 +13,9 @@ jobs:
         with:
           deno-version: v1.x
       - name: 😉 Format
-        run: deno fmt --check
+        run: deno task test:fmt
       - name: 😋 Lint
-        run: deno lint
+        run: deno task test:lint
   Type-Check:
     runs-on: ubuntu-latest
     steps:
