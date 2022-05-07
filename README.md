@@ -6,6 +6,8 @@ Web stream based jsonlines decoder/encoder
 - ✅Deno
 - ✅Node.js
 
+This library supports JSON in the following formats:
+
 - Line-delimited JSON (JSONLinesStream)
   - NDJSON
   - JSON lines
