@@ -1,3 +1,24 @@
+// implemented to be streamed as:
+// WritableStream -> ReadableStream(1) -> AsyncIterator -> ReadableStream(2)
+// ReadableStream(2).pull called, then call AsyncIterator.next.
+// AsyncIterator.next called, then call ReadableStream(1).pull.
+// ReadableStream(1) and WritableStream are buffered by TransformStream.
+// polyfill for ReadableStream.prototype[Symbol.asyncIterator]
+// https://bugs.chromium.org/p/chromium/issues/detail?id=929585#c10
+if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
+    ReadableStream.prototype[Symbol.asyncIterator] = async function*() {
+        const reader = this.getReader();
+        try {
+            while(true){
+                const { done , value  } = await reader.read();
+                if (done) return;
+                yield value;
+            }
+        } finally{
+            reader.releaseLock();
+        }
+    };
+}
 /** Convert an iterator into a TransformStream. */ function createStream(toIter, { writableStrategy , readableStrategy  }) {
     const { writable , readable  } = new TransformStream({
     }, writableStrategy, readableStrategy);
@@ -29,7 +50,7 @@
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesStream } from "./mod.ts";
+ * import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.4/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -92,7 +113,7 @@
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONStream } from "./mod.ts";
+ * import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.4/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
