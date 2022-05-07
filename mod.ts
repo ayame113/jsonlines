@@ -11,20 +11,23 @@ export interface JSONLinesStreamOptions {
   readableStrategy?: QueuingStrategy<JSONValue>;
 }
 
-export class JSONLinesStream implements TransformStream {
-  writable: WritableStream<string>;
-  readable: ReadableStream<JSONValue>;
-  #dataIterator: AsyncGenerator<string, void, unknown>;
-  constructor(options: JSONLinesStreamOptions = {}) {
-    const { writable, readable } = new TransformStream<string, string>(
-      {},
-      options.writableStrategy,
-      options.readableStrategy,
-    );
-    this.writable = writable;
-    this.readable = new ReadableStream({
+function createStream(
+  createDataIterator: (
+    src: ReadableStream<string>,
+  ) => AsyncIterator<string, void, unknown>,
+  { writableStrategy, readableStrategy }: JSONLinesStreamOptions,
+) {
+  const { writable, readable } = new TransformStream<string, string>(
+    {},
+    writableStrategy,
+    readableStrategy,
+  );
+  const dataIterator = createDataIterator(readable);
+  return {
+    writable,
+    readable: new ReadableStream<JSONValue>({
       pull: async (controller) => {
-        const { done, value } = await this.#dataIterator.next();
+        const { done, value } = await dataIterator.next();
         if (done) {
           controller.close();
           return;
@@ -42,32 +45,45 @@ export class JSONLinesStream implements TransformStream {
         }
         controller.enqueue(parsed);
       },
-    });
-    this.#dataIterator = options.separator
-      ? this.#separatorDelimitedJSONJSONIterator(readable, options.separator)
-      : this.#concatenatedJSONIterator(readable);
-  }
-  #targetString = "";
-  #hasValue = false;
-  #blank = new Set(" \t\r\n");
-  // separator-delimited JSON
-  async *#separatorDelimitedJSONJSONIterator(
-    src: ReadableStream<string>,
-    separator: string,
-  ) {
+    }),
+  };
+}
+
+export class JSONLinesStream implements TransformStream<string, JSONValue> {
+  writable: WritableStream<string>;
+  readable: ReadableStream<JSONValue>;
+  #separator: string;
+  constructor(options: JSONLinesStreamOptions = {}) {
+    const { separator = "\n" } = options;
     if (count(separator) !== 1) {
       throw new Error(
         `The separator length should be 1, but it was ${count(separator)}.`,
       );
     }
+    this.#separator = separator;
+
+    const { writable, readable } = createStream(
+      this.#separatorDelimitedJSONJSONIterator.bind(this),
+      options,
+    );
+    this.writable = writable;
+    this.readable = readable;
+  }
+
+  #targetString = "";
+  #hasValue = false;
+  #blank = new Set(" \t\r\n");
+  async *#separatorDelimitedJSONJSONIterator(src: ReadableStream<string>) {
     for await (const string of src) {
       let sliceStart = 0;
       let i = -1;
       for (const char of string) {
         i += char.length;
-        if (char === separator && this.#hasValue) {
-          yield this.#targetString +
-            string.slice(sliceStart, i + 1 - char.length);
+        if (char === this.#separator) {
+          if (this.#hasValue) {
+            yield this.#targetString +
+              string.slice(sliceStart, i + 1 - char.length);
+          }
           this.#hasValue = false;
           this.#targetString = "";
           sliceStart = i + 1;
@@ -81,7 +97,24 @@ export class JSONLinesStream implements TransformStream {
       yield this.#targetString;
     }
   }
-  // Concatenated JSON parser
+}
+
+export class ConcatenatedJSONStream
+  implements TransformStream<string, JSONValue> {
+  writable: WritableStream<string>;
+  readable: ReadableStream<JSONValue>;
+  constructor(options: JSONLinesStreamOptions = {}) {
+    const { writable, readable } = createStream(
+      this.#concatenatedJSONIterator.bind(this),
+      options,
+    );
+    this.writable = writable;
+    this.readable = readable;
+  }
+
+  #targetString = "";
+  #hasValue = false;
+  #blank = new Set(" \t\r\n");
   #nestCount = 0;
   #readingString = false;
   #escapeNext = false;

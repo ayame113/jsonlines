@@ -1,0 +1,10 @@
+{"some":"thing\n"}
+{
+  "may": {
+    "include": "nested",
+    "objects": [
+      "and",
+      "arrays"
+    ]
+  }
+}
