@@ -37,7 +37,7 @@ jobs:
         with:
           deno-version: v1.x
       - name: 😎 Test
-        run: deno test:coverage
+        run: deno task test:coverage
       - name: Create coverage report
         run: deno coverage ./coverage --lcov > coverage.lcov
       - name: Codecov
