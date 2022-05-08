@@ -36,7 +36,7 @@ import {
   ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
   JSONLinesStringifyStream,
-} from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+} from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 ```
 
 ### browser
@@ -47,7 +47,7 @@ import {
   ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
   JSONLinesStringifyStream,
-} from "https://deno.land/x/jsonlines@v0.0.7/js/mod.js";
+} from "https://deno.land/x/jsonlines@v0.0.8/js/mod.js";
 ```
 
 ### Node.js
@@ -85,10 +85,10 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```
 
 ```ts
-import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.7/testdata/json-lines.jsonl",
+  "https://deno.land/x/jsonlines@v0.0.8/testdata/json-lines.jsonl",
 );
 
 const readable = body!
@@ -118,10 +118,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.7/testdata/json-seq.json-seq",
+  "https://deno.land/x/jsonlines@v0.0.8/testdata/json-seq.json-seq",
 );
 
 const recordSeparator = "\x1E";
@@ -143,10 +143,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v0.0.7/testdata/concat-json.concat-json",
+  "https://deno.land/x/jsonlines@v0.0.8/testdata/concat-json.concat-json",
 );
 
 const readable = body!
@@ -161,7 +161,7 @@ for await (const data of readable) {
 ### How to stringify JSON Lines
 
 ```ts
-import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const target = [
   { foo: "bar" },
@@ -190,7 +190,7 @@ readable
 ### How to stringify json-seq
 
 ```ts
-import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const recordSeparator = "\x1E";
 const target = [
@@ -220,7 +220,7 @@ readable
 ### How to stringify concat-json
 
 ```ts
-import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
 
 const target = [
   { foo: "bar" },
