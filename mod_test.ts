@@ -5,14 +5,14 @@ import {
 import {
   ConcatenatedJSONParseStream,
   JSONLinesParseStream,
-  JSONLinesParseStreamOptions,
+  ParseStreamOptions,
 } from "./mod.ts";
 
 async function assertValidParse(
   transform: typeof ConcatenatedJSONParseStream | typeof JSONLinesParseStream,
   chunks: string[],
   expect: unknown[],
-  options?: JSONLinesParseStreamOptions,
+  options?: ParseStreamOptions,
 ) {
   const r = new ReadableStream({
     start(controller) {
@@ -31,7 +31,7 @@ async function assertValidParse(
 async function assertInvalidParse(
   transform: typeof ConcatenatedJSONParseStream | typeof JSONLinesParseStream,
   chunks: string[],
-  options?: JSONLinesParseStreamOptions,
+  options?: ParseStreamOptions,
   // deno-lint-ignore no-explicit-any
   ErrorClass?: (new (...args: any[]) => Error) | undefined,
   msgIncludes?: string | undefined,

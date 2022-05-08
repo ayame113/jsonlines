@@ -44,19 +44,28 @@ type QueuingStrategyString = ConstructorParameters<typeof T>[1];
 /** QueuingStrategy<JSONValue> | undefined */
 type QueuingStrategyJSONValue = ConstructorParameters<typeof T>[2];
 
-export interface JSONLinesParseStreamOptions {
+export interface ParseStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
-  separator?: string;
+  readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  writableStrategy?: QueuingStrategyString;
+  readonly writableStrategy?: QueuingStrategyString;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readableStrategy?: QueuingStrategyJSONValue;
+  readonly readableStrategy?: QueuingStrategyJSONValue;
+}
+
+export interface StringifyStreamOptions {
+  /**a character to separate JSON. The character length must be 1. The default is '\n'. */
+  readonly separator?: string;
+  /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
+  readonly writableStrategy?: QueuingStrategyJSONValue;
+  /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
+  readonly readableStrategy?: QueuingStrategyString;
 }
 
 /** Convert an iterator into a TransformStream. */
 function createStream(
   toIter: (src: ReadableStream<string>) => AsyncIterator<string, void, unknown>,
-  { writableStrategy, readableStrategy }: JSONLinesParseStreamOptions,
+  { writableStrategy, readableStrategy }: ParseStreamOptions,
 ) {
   const { writable, readable } = new TransformStream<string, string>(
     {},
@@ -114,11 +123,12 @@ function createStream(
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */
-export class JSONLinesParseStream implements TransformStream<string, JSONValue> {
+export class JSONLinesParseStream
+  implements TransformStream<string, JSONValue> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
   #separator: string;
-  constructor(options: JSONLinesParseStreamOptions = {}) {
+  constructor(options: ParseStreamOptions = {}) {
     const { separator = "\n" } = options;
     if (count(separator) !== 1) {
       throw new Error(
@@ -184,6 +194,7 @@ export class JSONLinesParseStream implements TransformStream<string, JSONValue> 
  * ```
  *
  * @param options
+ * @param options.separator This parameter will be ignored.
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */
@@ -191,7 +202,7 @@ export class ConcatenatedJSONParseStream
   implements TransformStream<string, JSONValue> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
-  constructor(options: JSONLinesParseStreamOptions = {}) {
+  constructor(options: ParseStreamOptions = {}) {
     const { writable, readable } = createStream(
       this.#concatenatedJSONIterator.bind(this),
       options,
@@ -265,6 +276,54 @@ export class ConcatenatedJSONParseStream
     if (this.#hasValue) {
       yield this.#targetString;
     }
+  }
+}
+
+/**
+ * stream to stringify JSONLines.
+ *
+ * ```ts
+ * ```
+ *
+ * @param options
+ * @param options.separator a character to separate JSON. The default is '\n'.
+ * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ */
+export class JSONLinesStringifyStream
+  extends TransformStream<JSONValue, string> {
+  constructor(options: StringifyStreamOptions = {}) {
+    const { separator = "\n", writableStrategy, readableStrategy } = options;
+    const [prefix, suffix] = separator.includes("\n")
+      ? ["", separator]
+      : [separator, "\n"];
+    super(
+      {
+        transform(chunk, controller) {
+          controller.enqueue(`${prefix}${JSON.stringify(chunk)}${suffix}`);
+        },
+      },
+      writableStrategy,
+      readableStrategy,
+    );
+  }
+}
+
+/**
+ * stream to stringify concatenated JSON.
+ *
+ * ```ts
+ * ```
+ *
+ * @param options
+ * @param options.separator This parameter will be ignored.
+ * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ */
+export class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
+  constructor(options: StringifyStreamOptions = {}) {
+    const { writableStrategy, readableStrategy } = options;
+    super({ separator: "\n", writableStrategy, readableStrategy });
   }
 }
 
