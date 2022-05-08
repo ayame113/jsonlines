@@ -21,8 +21,8 @@ This library supports JSON in the following formats:
 - Record separator-delimited JSON (JSONLinesParseStream)
 - Concatenated JSON (ConcatenatedJSONParseStream)
 
-See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the specifications of
-each JSON.
+See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the
+specifications of each JSON.
 
 ## install or import
 
