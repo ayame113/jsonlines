@@ -25,7 +25,7 @@ each JSON.
 
 ## install or import
 
-#### Deno
+### Deno
 
 https://deno.land/x/jsonlines/
 https://doc.deno.land/https://deno.land/x/jsonlines/mod.ts
@@ -39,7 +39,7 @@ import {
 } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 ```
 
-#### browser
+### browser
 
 ```ts
 import {
@@ -50,7 +50,7 @@ import {
 } from "https://deno.land/x/jsonlines@v0.0.7/js/mod.js";
 ```
 
-#### Node.js
+### Node.js
 
 https://www.npmjs.com/package/jsonlines-web
 
@@ -74,7 +74,7 @@ import {
 
 A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 
-#### How to parse JSON Lines
+### How to parse JSON Lines
 
 ./json-lines.jsonl
 
@@ -100,7 +100,7 @@ for await (const data of readable) {
 }
 ```
 
-#### How to parse json-seq
+### How to parse json-seq
 
 ./json-seq.json-seq
 
@@ -134,7 +134,7 @@ for await (const data of readable) {
 }
 ```
 
-#### How to parse concat-json
+### How to parse concat-json
 
 ./concat-json.concat-json
 
@@ -158,7 +158,7 @@ for await (const data of readable) {
 }
 ```
 
-#### How to stringify JSON Lines
+### How to stringify JSON Lines
 
 ```ts
 import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
@@ -187,7 +187,7 @@ readable
   .then(() => console.log("write success"));
 ```
 
-#### How to stringify json-seq
+### How to stringify json-seq
 
 ```ts
 import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
@@ -217,7 +217,7 @@ readable
   .then(() => console.log("write success"));
 ```
 
-#### How to stringify concat-json
+### How to stringify concat-json
 
 ```ts
 import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
