@@ -123,6 +123,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * ```
  *
  * @param options
+ * @param options.separator This parameter will be ignored.
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */ export class ConcatenatedJSONParseStream {
@@ -190,6 +191,99 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         if (this.#hasValue) {
             yield this.#targetString;
         }
+    }
+}
+/**
+ * stream to stringify JSONLines.
+ *
+ * ```ts
+ * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ *
+ * const target = [
+ *   { foo: "bar" },
+ *   { baz: 100 },
+ * ];
+ * const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+ *   create: true,
+ *   write: true,
+ * });
+ * const readable = new ReadableStream({
+ *   pull(controller) {
+ *     for (const chunk of target) {
+ *       controller.enqueue(chunk);
+ *     }
+ *     controller.close();
+ *   },
+ * });
+ *
+ * readable
+ *   .pipeThrough(new JSONLinesStringifyStream())
+ *   .pipeThrough(new TextEncoderStream())
+ *   .pipeTo(file.writable)
+ *   .then(() => console.log("write success"));
+ * ```
+ *
+ * @param options
+ * @param options.separator a character to separate JSON. The default is '\n'.
+ * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ */ export class JSONLinesStringifyStream extends TransformStream {
+    constructor(options = {
+    }){
+        const { separator ="\n" , writableStrategy , readableStrategy  } = options;
+        const [prefix, suffix] = separator.includes("\n") ? [
+            "", separator] : [separator, "\n"
+        ];
+        super({
+            transform (chunk, controller) {
+                controller.enqueue(`${prefix}${JSON.stringify(chunk)}${suffix}`);
+            }
+        }, writableStrategy, readableStrategy);
+    }
+}
+/**
+ * stream to stringify concatenated JSON.
+ *
+ * ```ts
+ * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ *
+ * const target = [
+ *   { foo: "bar" },
+ *   { baz: 100 },
+ * ];
+ * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
+ *   create: true,
+ *   write: true,
+ * });
+ * const readable = new ReadableStream({
+ *   pull(controller) {
+ *     for (const chunk of target) {
+ *       controller.enqueue(chunk);
+ *     }
+ *     controller.close();
+ *   },
+ * });
+ *
+ * readable
+ *   .pipeThrough(new ConcatenatedJSONStringifyStream())
+ *   .pipeThrough(new TextEncoderStream())
+ *   .pipeTo(file.writable)
+ *   .then(() => console.log("write success"));
+ * ```
+ *
+ * @param options
+ * @param options.separator This parameter will be ignored.
+ * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
+ */ export class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
+    constructor(options = {
+    }){
+        const { writableStrategy , readableStrategy  } = options;
+        super({
+            separator: "\n",
+            writableStrategy,
+            readableStrategy
+        });
     }
 }
 /** Count the number of characters in consideration of surrogate pairs. */ function count(iterator) {

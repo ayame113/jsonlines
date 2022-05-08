@@ -33,7 +33,9 @@ https://doc.deno.land/https://deno.land/x/jsonlines/mod.ts
 ```ts
 import {
   ConcatenatedJSONParseStream,
+  ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
+  JSONLinesStringifyStream,
 } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 ```
 
@@ -42,7 +44,9 @@ import {
 ```ts
 import {
   ConcatenatedJSONParseStream,
+  ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
+  JSONLinesStringifyStream,
 } from "https://deno.land/x/jsonlines@v0.0.7/js/mod.js";
 ```
 
@@ -55,9 +59,14 @@ npm install jsonlines-web
 ```
 
 ```ts, ignore
-import { ConcatenatedJSONParseStream, JSONLinesParseStream } from "jsonlines-web";
+import {
+  ConcatenatedJSONParseStream,
+  ConcatenatedJSONStringifyStream,
+  JSONLinesParseStream,
+  JSONLinesStringifyStream,
+} from "jsonlines-web";
 // if you need
-// import { TextDecoderStream } from "node:stream/web";
+// import { TextDecoderStream, TextEncoderStream } from "node:stream/web";
 // import { fetch } from "undici";
 ```
 
@@ -147,6 +156,94 @@ const readable = body!
 for await (const data of readable) {
   console.log(data);
 }
+```
+
+##### How to stringify JSON Lines
+
+```ts
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+
+const target = [
+  { foo: "bar" },
+  { baz: 100 },
+];
+const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+  create: true,
+  write: true,
+});
+const readable = new ReadableStream({
+  pull(controller) {
+    for (const chunk of target) {
+      controller.enqueue(chunk);
+    }
+    controller.close();
+  },
+});
+
+readable
+  .pipeThrough(new JSONLinesStringifyStream())
+  .pipeThrough(new TextEncoderStream())
+  .pipeTo(file.writable)
+  .then(() => console.log("write success"));
+```
+
+##### How to stringify json-seq
+
+```ts
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+
+const recordSeparator = "\x1E";
+const target = [
+  { foo: "bar" },
+  { baz: 100 },
+];
+const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+  create: true,
+  write: true,
+});
+const readable = new ReadableStream({
+  pull(controller) {
+    for (const chunk of target) {
+      controller.enqueue(chunk);
+    }
+    controller.close();
+  },
+});
+
+readable
+  .pipeThrough(new JSONLinesStringifyStream({ separator: recordSeparator }))
+  .pipeThrough(new TextEncoderStream())
+  .pipeTo(file.writable)
+  .then(() => console.log("write success"));
+```
+
+##### How to stringify concat-json
+
+```ts
+import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+
+const target = [
+  { foo: "bar" },
+  { baz: 100 },
+];
+const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
+  create: true,
+  write: true,
+});
+const readable = new ReadableStream({
+  pull(controller) {
+    for (const chunk of target) {
+      controller.enqueue(chunk);
+    }
+    controller.close();
+  },
+});
+
+readable
+  .pipeThrough(new ConcatenatedJSONStringifyStream())
+  .pipeThrough(new TextEncoderStream())
+  .pipeTo(file.writable)
+  .then(() => console.log("write success"));
 ```
 
 ## limit

@@ -4,8 +4,12 @@ import {
 } from "https://deno.land/std@0.138.0/testing/asserts.ts";
 import {
   ConcatenatedJSONParseStream,
+  ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
+  JSONLinesStringifyStream,
+  JSONValue,
   ParseStreamOptions,
+  StringifyStreamOptions,
 } from "./mod.ts";
 
 async function assertValidParse(
@@ -28,6 +32,7 @@ async function assertValidParse(
   }
   assertEquals(res, expect);
 }
+
 async function assertInvalidParse(
   transform: typeof ConcatenatedJSONParseStream | typeof JSONLinesParseStream,
   chunks: string[],
@@ -36,7 +41,57 @@ async function assertInvalidParse(
   ErrorClass?: (new (...args: any[]) => Error) | undefined,
   msgIncludes?: string | undefined,
 ) {
+  const r = new ReadableStream<string>({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+  await assertRejects(
+    async () => {
+      for await (const _ of r.pipeThrough(new transform(options)));
+    },
+    ErrorClass,
+    msgIncludes,
+  );
+}
+
+async function assertValidStringify(
+  transform:
+    | typeof ConcatenatedJSONStringifyStream
+    | typeof JSONLinesStringifyStream,
+  chunks: JSONValue[],
+  expect: string[],
+  options?: StringifyStreamOptions,
+) {
   const r = new ReadableStream({
+    start(controller) {
+      for (const chunk of chunks) {
+        controller.enqueue(chunk);
+      }
+      controller.close();
+    },
+  });
+  const res = [];
+  for await (const data of r.pipeThrough(new transform(options))) {
+    res.push(data);
+  }
+  assertEquals(res, expect);
+}
+
+async function assertInvalidStringify(
+  transform:
+    | typeof ConcatenatedJSONStringifyStream
+    | typeof JSONLinesStringifyStream,
+  chunks: unknown[],
+  options?: StringifyStreamOptions,
+  // deno-lint-ignore no-explicit-any
+  ErrorClass?: (new (...args: any[]) => Error) | undefined,
+  msgIncludes?: string | undefined,
+) {
+  const r = new ReadableStream<unknown>({
     start(controller) {
       for (const chunk of chunks) {
         controller.enqueue(chunk);
@@ -54,7 +109,7 @@ async function assertInvalidParse(
 }
 
 Deno.test({
-  name: "concatenated",
+  name: "parse(concatenated)",
   async fn() {
     await assertValidParse(
       ConcatenatedJSONParseStream,
@@ -115,7 +170,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "concatenated: chunk",
+  name: "parse(concatenated): chunk",
   async fn() {
     await assertValidParse(
       ConcatenatedJSONParseStream,
@@ -161,7 +216,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "concatenated: surrogate pair",
+  name: "parse(concatenated): surrogate pair",
   async fn() {
     await assertValidParse(
       ConcatenatedJSONParseStream,
@@ -172,7 +227,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "concatenated: halfway chunk",
+  name: "parse(concatenated): halfway chunk",
   async fn() {
     await assertInvalidParse(
       ConcatenatedJSONParseStream,
@@ -185,7 +240,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator",
+  name: "parse(separator)",
   async fn() {
     await assertValidParse(
       JSONLinesParseStream,
@@ -221,7 +276,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: chunk",
+  name: "parse(separator): chunk",
   async fn() {
     await assertValidParse(
       JSONLinesParseStream,
@@ -257,7 +312,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: special separator",
+  name: "parse(separator): special separator",
   async fn() {
     {
       const separator = "\x1E";
@@ -281,7 +336,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: empty line",
+  name: "parse(separator): empty line",
   async fn() {
     await assertValidParse(
       JSONLinesParseStream,
@@ -297,7 +352,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: surrogate pair",
+  name: "parse(separator): surrogate pair",
   async fn() {
     await assertValidParse(
       JSONLinesParseStream,
@@ -308,7 +363,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: invalid line break",
+  name: "parse(separator): invalid line break",
   async fn() {
     await assertInvalidParse(
       JSONLinesParseStream,
@@ -321,7 +376,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: halfway chunk",
+  name: "parse(separator): halfway chunk",
   async fn() {
     await assertInvalidParse(
       JSONLinesParseStream,
@@ -334,7 +389,7 @@ Deno.test({
 });
 
 Deno.test({
-  name: "separator: invalid separator",
+  name: "parse(separator): invalid separator",
   async fn() {
     const separator = "aa";
     await assertInvalidParse(
@@ -343,6 +398,45 @@ Deno.test({
       { separator },
       Error,
       "The separator length should be 1, but it was 2.",
+    );
+  },
+});
+
+Deno.test({
+  name: "stringify(concatenated)",
+  async fn() {
+    await assertValidStringify(
+      ConcatenatedJSONStringifyStream,
+      [{ foo: "bar" }, { foo: "bar" }],
+      ['{"foo":"bar"}\n', '{"foo":"bar"}\n'],
+    );
+
+    const cyclic: Record<string, unknown> = {};
+    cyclic.cyclic = cyclic;
+    await assertInvalidStringify(
+      ConcatenatedJSONStringifyStream,
+      [cyclic],
+      {},
+      TypeError,
+      "Converting circular structure to JSON",
+    );
+  },
+});
+
+Deno.test({
+  name: "stringify(separator)",
+  async fn() {
+    await assertValidStringify(
+      JSONLinesStringifyStream,
+      [{ foo: "bar" }, { foo: "bar" }],
+      ['{"foo":"bar"}aaa\n', '{"foo":"bar"}aaa\n'],
+      { separator: "aaa\n" },
+    );
+    await assertValidStringify(
+      JSONLinesStringifyStream,
+      [{ foo: "bar" }, { foo: "bar" }],
+      ['aaa{"foo":"bar"}\n', 'aaa{"foo":"bar"}\n'],
+      { separator: "aaa" },
     );
   },
 });

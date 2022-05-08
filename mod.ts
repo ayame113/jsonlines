@@ -38,11 +38,13 @@ export type JSONValue =
   | boolean;
 
 // avoid Node type error
-declare abstract class T extends TransformStream<string, JSONValue> {}
+declare abstract class T1 extends TransformStream<string, JSONValue> {}
 /** QueuingStrategy<string> | undefined */
-type QueuingStrategyString = ConstructorParameters<typeof T>[1];
+type QueuingStrategyString = ConstructorParameters<typeof T1>[1];
 /** QueuingStrategy<JSONValue> | undefined */
-type QueuingStrategyJSONValue = ConstructorParameters<typeof T>[2];
+type QueuingStrategyJSONValue = ConstructorParameters<typeof T1>[2];
+/** QueuingStrategy<JSONValue> | undefined */
+type QueuingStrategyUnknown = ConstructorParameters<typeof TransformStream>[1];
 
 export interface ParseStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
@@ -57,7 +59,7 @@ export interface StringifyStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly writableStrategy?: QueuingStrategyJSONValue;
+  readonly writableStrategy?: QueuingStrategyUnknown;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
   readonly readableStrategy?: QueuingStrategyString;
 }
@@ -283,6 +285,30 @@ export class ConcatenatedJSONParseStream
  * stream to stringify JSONLines.
  *
  * ```ts
+ * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ *
+ * const target = [
+ *   { foo: "bar" },
+ *   { baz: 100 },
+ * ];
+ * const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+ *   create: true,
+ *   write: true,
+ * });
+ * const readable = new ReadableStream({
+ *   pull(controller) {
+ *     for (const chunk of target) {
+ *       controller.enqueue(chunk);
+ *     }
+ *     controller.close();
+ *   },
+ * });
+ *
+ * readable
+ *   .pipeThrough(new JSONLinesStringifyStream())
+ *   .pipeThrough(new TextEncoderStream())
+ *   .pipeTo(file.writable)
+ *   .then(() => console.log("write success"));
  * ```
  *
  * @param options
@@ -290,8 +316,7 @@ export class ConcatenatedJSONParseStream
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */
-export class JSONLinesStringifyStream
-  extends TransformStream<JSONValue, string> {
+export class JSONLinesStringifyStream extends TransformStream<unknown, string> {
   constructor(options: StringifyStreamOptions = {}) {
     const { separator = "\n", writableStrategy, readableStrategy } = options;
     const [prefix, suffix] = separator.includes("\n")
@@ -313,6 +338,30 @@ export class JSONLinesStringifyStream
  * stream to stringify concatenated JSON.
  *
  * ```ts
+ * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ *
+ * const target = [
+ *   { foo: "bar" },
+ *   { baz: 100 },
+ * ];
+ * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
+ *   create: true,
+ *   write: true,
+ * });
+ * const readable = new ReadableStream({
+ *   pull(controller) {
+ *     for (const chunk of target) {
+ *       controller.enqueue(chunk);
+ *     }
+ *     controller.close();
+ *   },
+ * });
+ *
+ * readable
+ *   .pipeThrough(new ConcatenatedJSONStringifyStream())
+ *   .pipeThrough(new TextEncoderStream())
+ *   .pipeTo(file.writable)
+ *   .then(() => console.log("write success"));
  * ```
  *
  * @param options
