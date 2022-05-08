@@ -106,7 +106,7 @@ function createStream(
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -181,7 +181,7 @@ export class JSONLinesParseStream
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -285,7 +285,7 @@ export class ConcatenatedJSONParseStream
  * stream to stringify JSONLines.
  *
  * ```ts
- * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
+ * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
  * const target = [
  *   { foo: "bar" },
@@ -338,7 +338,7 @@ export class JSONLinesStringifyStream extends TransformStream<unknown, string> {
  * stream to stringify concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v0.0.8/mod.ts";
+ * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
  * const target = [
  *   { foo: "bar" },
