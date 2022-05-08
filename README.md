@@ -14,11 +14,11 @@ Web stream based jsonlines decoder/encoder
 
 This library supports JSON in the following formats:
 
-- Line-delimited JSON (JSONLinesStream)
+- Line-delimited JSON (JSONLinesParseStream)
   - NDJSON
   - JSON lines
-- Record separator-delimited JSON (JSONLinesStream)
-- Concatenated JSON (ConcatenatedJSONStream)
+- Record separator-delimited JSON (JSONLinesParseStream)
+- Concatenated JSON (ConcatenatedJSONParseStream)
 
 See [wikipedia](https://en.wikipedia.org/wiki/JSON_streaming) for the use of
 each JSON.
@@ -32,8 +32,8 @@ https://doc.deno.land/https://deno.land/x/jsonlines/mod.ts
 
 ```ts
 import {
-  ConcatenatedJSONStream,
-  JSONLinesStream,
+  ConcatenatedJSONParseStream,
+  JSONLinesParseStream,
 } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 ```
 
@@ -41,8 +41,8 @@ import {
 
 ```ts
 import {
-  ConcatenatedJSONStream,
-  JSONLinesStream,
+  ConcatenatedJSONParseStream,
+  JSONLinesParseStream,
 } from "https://deno.land/x/jsonlines@v0.0.7/js/mod.js";
 ```
 
@@ -54,8 +54,8 @@ https://www.npmjs.com/package/jsonlines-web
 npm install jsonlines-web
 ```
 
-```js
-import { ConcatenatedJSONStream, JSONLinesStream } from "jsonlines-web";
+```ts, ignore
+import { ConcatenatedJSONParseStream, JSONLinesParseStream } from "jsonlines-web";
 // if you need
 // import { TextDecoderStream } from "node:stream/web";
 // import { fetch } from "undici";
@@ -76,7 +76,7 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
   "https://deno.land/x/jsonlines@v0.0.7/testdata/json-lines.jsonl",
@@ -84,7 +84,7 @@ const { body } = await fetch(
 
 const readable = body!
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new JSONLinesStream());
+  .pipeThrough(new JSONLinesParseStream());
 
 for await (const data of readable) {
   console.log(data);
@@ -109,7 +109,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
   "https://deno.land/x/jsonlines@v0.0.7/testdata/json-seq.json-seq",
@@ -118,7 +118,7 @@ const { body } = await fetch(
 const recordSeparator = "\x1E";
 const readable = body!
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new JSONLinesStream({ separator: recordSeparator }));
+  .pipeThrough(new JSONLinesParseStream({ separator: recordSeparator }));
 
 for await (const data of readable) {
   console.log(data);
@@ -134,7 +134,7 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
 
 const { body } = await fetch(
   "https://deno.land/x/jsonlines@v0.0.7/testdata/concat-json.concat-json",
@@ -142,7 +142,7 @@ const { body } = await fetch(
 
 const readable = body!
   .pipeThrough(new TextDecoderStream())
-  .pipeThrough(new ConcatenatedJSONStream());
+  .pipeThrough(new ConcatenatedJSONParseStream());
 
 for await (const data of readable) {
   console.log(data);

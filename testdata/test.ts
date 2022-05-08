@@ -1,4 +1,4 @@
-import { ConcatenatedJSONStream, JSONLinesStream } from "../mod.ts";
+import { ConcatenatedJSONParseStream, JSONLinesParseStream } from "../mod.ts";
 
 Deno.test(async function read_jsonlines() {
   const url = new URL("./json-lines.jsonl", import.meta.url);
@@ -6,7 +6,7 @@ Deno.test(async function read_jsonlines() {
 
   const readable = body!
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new JSONLinesStream());
+    .pipeThrough(new JSONLinesParseStream());
 
   for await (const data of readable) {
     console.log(data);
@@ -19,7 +19,7 @@ Deno.test(async function read_ndjson() {
 
   const readable = body!
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new JSONLinesStream());
+    .pipeThrough(new JSONLinesParseStream());
 
   for await (const data of readable) {
     console.log(data);
@@ -33,7 +33,7 @@ Deno.test(async function read_json_seq() {
   const recordSeparator = "\x1E";
   const readable = body!
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new JSONLinesStream({ separator: recordSeparator }));
+    .pipeThrough(new JSONLinesParseStream({ separator: recordSeparator }));
 
   for await (const data of readable) {
     console.log(data);
@@ -46,7 +46,7 @@ Deno.test(async function read_concat_json() {
 
   const readable = body!
     .pipeThrough(new TextDecoderStream())
-    .pipeThrough(new ConcatenatedJSONStream());
+    .pipeThrough(new ConcatenatedJSONParseStream());
 
   for await (const data of readable) {
     console.log(data);

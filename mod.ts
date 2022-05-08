@@ -44,7 +44,7 @@ type QueuingStrategyString = ConstructorParameters<typeof T>[1];
 /** QueuingStrategy<JSONValue> | undefined */
 type QueuingStrategyJSONValue = ConstructorParameters<typeof T>[2];
 
-export interface JSONLinesStreamOptions {
+export interface JSONLinesParseStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
@@ -56,7 +56,7 @@ export interface JSONLinesStreamOptions {
 /** Convert an iterator into a TransformStream. */
 function createStream(
   toIter: (src: ReadableStream<string>) => AsyncIterator<string, void, unknown>,
-  { writableStrategy, readableStrategy }: JSONLinesStreamOptions,
+  { writableStrategy, readableStrategy }: JSONLinesParseStreamOptions,
 ) {
   const { writable, readable } = new TransformStream<string, string>(
     {},
@@ -95,14 +95,14 @@ function createStream(
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
  *
  * const readable = body!
  *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new JSONLinesStream());
+ *   .pipeThrough(new JSONLinesParseStream());
  *
  * for await (const data of readable) {
  *   console.log(data);
@@ -114,11 +114,11 @@ function createStream(
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */
-export class JSONLinesStream implements TransformStream<string, JSONValue> {
+export class JSONLinesParseStream implements TransformStream<string, JSONValue> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
   #separator: string;
-  constructor(options: JSONLinesStreamOptions = {}) {
+  constructor(options: JSONLinesParseStreamOptions = {}) {
     const { separator = "\n" } = options;
     if (count(separator) !== 1) {
       throw new Error(
@@ -169,14 +169,14 @@ export class JSONLinesStream implements TransformStream<string, JSONValue> {
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
  *
  * const readable = body!
  *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new ConcatenatedJSONStream());
+ *   .pipeThrough(new ConcatenatedJSONParseStream());
  *
  * for await (const data of readable) {
  *   console.log(data);
@@ -187,11 +187,11 @@ export class JSONLinesStream implements TransformStream<string, JSONValue> {
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  */
-export class ConcatenatedJSONStream
+export class ConcatenatedJSONParseStream
   implements TransformStream<string, JSONValue> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
-  constructor(options: JSONLinesStreamOptions = {}) {
+  constructor(options: JSONLinesParseStreamOptions = {}) {
     const { writable, readable } = createStream(
       this.#concatenatedJSONIterator.bind(this),
       options,

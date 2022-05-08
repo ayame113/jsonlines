@@ -45,14 +45,14 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
  *
  * const readable = body!
  *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new JSONLinesStream());
+ *   .pipeThrough(new JSONLinesParseStream());
  *
  * for await (const data of readable) {
  *   console.log(data);
@@ -63,7 +63,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * @param options.separator a character to separate JSON. The character length must be 1. The default is '\n'.
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
- */ export class JSONLinesStream {
+ */ export class JSONLinesParseStream {
     #separator;
     constructor(options = {
     }){
@@ -108,14 +108,14 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v0.0.7/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
  *
  * const readable = body!
  *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new ConcatenatedJSONStream());
+ *   .pipeThrough(new ConcatenatedJSONParseStream());
  *
  * for await (const data of readable) {
  *   console.log(data);
@@ -125,7 +125,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * @param options
  * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
  * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
- */ export class ConcatenatedJSONStream {
+ */ export class ConcatenatedJSONParseStream {
     constructor(options = {
     }){
         const { writable , readable  } = createStream(this.#concatenatedJSONIterator.bind(this), options);
