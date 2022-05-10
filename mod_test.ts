@@ -347,6 +347,19 @@ Deno.test({
 });
 
 Deno.test({
+  name: "parse(concatenated): truncate error message",
+  async fn() {
+    await assertInvalidParse(
+      ConcatenatedJSONParseStream,
+      [`{${"foo".repeat(100)}}`],
+      {},
+      SyntaxError,
+      `Unexpected token f in JSON at position 1 (parsing: '{foofoofoofoofoofoofoofoofoofo...')`,
+    );
+  },
+});
+
+Deno.test({
   name: "parse(separator)",
   async fn() {
     await assertValidParse(
