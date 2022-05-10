@@ -63,7 +63,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -123,7 +123,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -224,7 +224,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  *
  * ```ts
  * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+ * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
  *
  * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,
@@ -261,7 +261,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
  *
  * ```ts
  * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
+ * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
  *
  * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,

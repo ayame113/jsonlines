@@ -1,5 +1,5 @@
 {
   "imports": {
-    "https://deno.land/x/jsonlines@v1.0.0/": "./"
+    "https://deno.land/x/jsonlines@v1.1.0/": "./"
   }
 }
