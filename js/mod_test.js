@@ -1,5 +1,6 @@
 import { assertEquals, assertRejects } from "https://deno.land/std@0.138.0/testing/asserts.ts";
-import { ConcatenatedJSONParseStream, ConcatenatedJSONStringifyStream, JSONLinesParseStream, JSONLinesStringifyStream } from "./mod.js";
+import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/conversion.ts";
+import { ConcatenatedJSONParseStream, ConcatenatedJSONStringifyStream, JSONLinesParseStream, JSONLinesStringifyStream, transformStreamFromGeneratorFunction } from "./mod.js";
 async function assertValidParse(transform, chunks, expect, options) {
     const r = new ReadableStream({
         start (controller) {
@@ -62,39 +63,6 @@ Deno.test({
     name: "parse(concatenated)",
     async fn () {
         await assertValidParse(ConcatenatedJSONParseStream, [
-            "0"
-        ], [
-            0
-        ]);
-        await assertValidParse(ConcatenatedJSONParseStream, [
-            "100"
-        ], [
-            100
-        ]);
-        await assertValidParse(ConcatenatedJSONParseStream, [
-            '100 200 {"foo": "bar"}'
-        ], [
-            100,
-            200,
-            {
-                foo: "bar"
-            }
-        ]);
-        await assertValidParse(ConcatenatedJSONParseStream, [
-            '"foo"'
-        ], [
-            "foo"
-        ]);
-        await assertValidParse(ConcatenatedJSONParseStream, [
-            '"foo""bar"{"foo": "bar"}'
-        ], [
-            "foo",
-            "bar",
-            {
-                foo: "bar"
-            }
-        ]);
-        await assertValidParse(ConcatenatedJSONParseStream, [
             '{"foo": "bar"}'
         ], [
             {
@@ -143,6 +111,187 @@ Deno.test({
             {
                 foo: "bar"
             }
+        ]);
+    }
+});
+Deno.test({
+    name: "parse(concatenated): primitive",
+    async fn () {
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "0"
+        ], [
+            0
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "100"
+        ], [
+            100
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '100 200"foo"'
+        ], [
+            100,
+            200,
+            "foo"
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '100 200{"foo": "bar"}'
+        ], [
+            100,
+            200,
+            {
+                foo: "bar"
+            }
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '100 200["foo"]'
+        ], [
+            100,
+            200,
+            [
+                "foo"
+            ]
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '"foo"'
+        ], [
+            "foo"
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '"foo""bar"{"foo": "bar"}'
+        ], [
+            "foo",
+            "bar",
+            {
+                foo: "bar"
+            }
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '"foo""bar"["foo"]'
+        ], [
+            "foo",
+            "bar",
+            [
+                "foo"
+            ]
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            '"foo""bar"0'
+        ], [
+            "foo",
+            "bar",
+            0
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "null"
+        ], [
+            null
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'null null{"foo": "bar"}'
+        ], [
+            null,
+            null,
+            {
+                foo: "bar"
+            }
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'null null["foo"]'
+        ], [
+            null,
+            null,
+            [
+                "foo"
+            ]
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "null null 0"
+        ], [
+            null,
+            null,
+            0
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'null null"foo"'
+        ], [
+            null,
+            null,
+            "foo"
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "true"
+        ], [
+            true
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'true true{"foo": "bar"}'
+        ], [
+            true,
+            true,
+            {
+                foo: "bar"
+            }
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'true true["foo"]'
+        ], [
+            true,
+            true,
+            [
+                "foo"
+            ]
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "true true 0"
+        ], [
+            true,
+            true,
+            0
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'true true"foo"'
+        ], [
+            true,
+            true,
+            "foo"
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "false"
+        ], [
+            false
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'false false{"foo": "bar"}'
+        ], [
+            false,
+            false,
+            {
+                foo: "bar"
+            }
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'false false["foo"]'
+        ], [
+            false,
+            false,
+            [
+                "foo"
+            ]
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            "false false 0"
+        ], [
+            false,
+            false,
+            0
+        ]);
+        await assertValidParse(ConcatenatedJSONParseStream, [
+            'false false"foo"'
+        ], [
+            false,
+            false,
+            "foo"
         ]);
     }
 });
@@ -249,6 +398,15 @@ Deno.test({
     }
 });
 Deno.test({
+    name: "parse(concatenated): truncate error message",
+    async fn () {
+        await assertInvalidParse(ConcatenatedJSONParseStream, [
+            `{${"foo".repeat(100)}}`
+        ], {
+        }, SyntaxError, `Unexpected token f in JSON at position 1 (parsing: '{foofoofoofoofoofoofoofoofoofo...')`);
+    }
+});
+Deno.test({
     name: "parse(separator)",
     async fn () {
         await assertValidParse(JSONLinesParseStream, [
@@ -349,36 +507,19 @@ Deno.test({
 Deno.test({
     name: "parse(separator): special separator",
     async fn () {
-        {
-            const separator = "\x1E";
-            await assertValidParse(JSONLinesParseStream, [
-                `${separator}{"foo": "bar"}${separator}{"foo": "bar"}${separator}`
-            ], [
-                {
-                    foo: "bar"
-                },
-                {
-                    foo: "bar"
-                }
-            ], {
-                separator
-            });
-        }
-        {
-            const separator = "👪";
-            await assertValidParse(JSONLinesParseStream, [
-                `${separator}{"foo": "bar"}${separator}{"foo": "bar"}${separator}`
-            ], [
-                {
-                    foo: "bar"
-                },
-                {
-                    foo: "bar"
-                }
-            ], {
-                separator
-            });
-        }
+        const separator = "\x1E";
+        await assertValidParse(JSONLinesParseStream, [
+            `${separator}{"foo": "bar"}${separator}{"foo": "bar"}${separator}`
+        ], [
+            {
+                foo: "bar"
+            },
+            {
+                foo: "bar"
+            }
+        ], {
+            separator
+        });
     }
 });
 Deno.test({
@@ -448,6 +589,14 @@ Deno.test({
         ], {
             separator
         }, Error, "The separator length should be 1, but it was 2.");
+        {
+            const separator = "👪";
+            await assertInvalidParse(JSONLinesParseStream, [
+                `{"foo": "bar"}${separator}{"foo": "bar"}`
+            ], {
+                separator
+            }, Error, "The separator length should be 1, but it was 2.");
+        }
     }
 });
 Deno.test({
@@ -500,5 +649,69 @@ Deno.test({
         ], {
             separator: "aaa"
         });
+    }
+});
+Deno.test({
+    name: "transformStreamFromGeneratorFunction",
+    async fn () {
+        const reader = readableStreamFromIterable([
+            0,
+            1,
+            2
+        ]).pipeThrough(transformStreamFromGeneratorFunction(async function*(src) {
+            for await (const i of src){
+                yield i * 100;
+            }
+        }));
+        const res = [];
+        for await (const i of reader){
+            res.push(i);
+        }
+        assertEquals(res, [
+            0,
+            100,
+            200
+        ]);
+    }
+});
+Deno.test({
+    name: "transformStreamFromGeneratorFunction: iterable (not async)",
+    async fn () {
+        const reader = readableStreamFromIterable([
+            0,
+            1,
+            2
+        ]).pipeThrough(transformStreamFromGeneratorFunction(function*(_src) {
+            yield 0;
+            yield 100;
+            yield 200;
+        }));
+        const res = [];
+        for await (const i of reader){
+            res.push(i);
+        }
+        assertEquals(res, [
+            0,
+            100,
+            200
+        ]);
+    }
+});
+Deno.test({
+    name: "transformStreamFromGeneratorFunction: cancel",
+    async fn () {
+        let callCount = 0;
+        let cancelReason = "";
+        const reader = new ReadableStream({
+            cancel (reason) {
+                callCount++;
+                cancelReason = reason;
+            }
+        }).pipeThrough(transformStreamFromGeneratorFunction(async function*(_) {
+            yield 0;
+        }));
+        await reader.cancel("__reason__");
+        assertEquals(callCount, 1);
+        assertEquals(cancelReason, "__reason__");
     }
 });
