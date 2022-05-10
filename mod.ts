@@ -31,10 +31,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
 }
 
 // avoid dnt typecheck error
-type _QueuingStrategy<T> = QueuingStrategy extends
-  ConstructorParameters<typeof TransformStream>[1] ? QueuingStrategy<T>
-  : // deno-lint-ignore no-explicit-any
-  any;
+type _QueuingStrategy<T> = QueuingStrategy<T | undefined>;
 
 export type JSONValue =
   | { [key: string]: JSONValue }
