@@ -37,68 +37,78 @@ export type JSONValue =
   | number
   | boolean;
 
-// avoid Node type error
-declare abstract class T1 extends TransformStream<string, JSONValue> {}
-/** QueuingStrategy<string> | undefined */
-type QueuingStrategyString = ConstructorParameters<typeof T1>[1];
-/** QueuingStrategy<JSONValue> | undefined */
-type QueuingStrategyJSONValue = ConstructorParameters<typeof T1>[2];
-/** QueuingStrategy<JSONValue> | undefined */
-type QueuingStrategyUnknown = ConstructorParameters<typeof TransformStream>[1];
-
 export interface ParseStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly writableStrategy?: QueuingStrategyString;
+  readonly writableStrategy?: QueuingStrategy<string>;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly readableStrategy?: QueuingStrategyJSONValue;
+  readonly readableStrategy?: QueuingStrategy<JSONValue>;
 }
 
 export interface StringifyStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly writableStrategy?: QueuingStrategyUnknown;
+  readonly writableStrategy?: QueuingStrategy<unknown>;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly readableStrategy?: QueuingStrategyString;
+  readonly readableStrategy?: QueuingStrategy<string>;
 }
 
-/** Convert an iterator into a TransformStream. */
-function createStream(
-  toIter: (src: ReadableStream<string>) => AsyncIterator<string, void, unknown>,
-  { writableStrategy, readableStrategy }: ParseStreamOptions,
-) {
-  const { writable, readable } = new TransformStream<string, string>(
-    {},
-    writableStrategy,
-    readableStrategy,
-  );
-  const dataIterator = toIter(readable);
+//output: 0, 100, 200
+/**
+ * Convert the generator function into a TransformStream.
+ *
+ * ```ts
+ * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
+ * import { transformStreamFromGeneratorFunction } from "./mod.ts";
+ *
+ * const reader = readableStreamFromIterable([0, 1, 2])
+ *   .pipeThrough(transformStreamFromGeneratorFunction(async function* (src) {
+ *     for await (const chunk of src) {
+ *       yield chunk * 100;
+ *     }
+ *   }));
+ *
+ * for await (const chunk of reader) {
+ *   console.log(chunk);
+ * }
+ * // output: 0, 100, 200
+ * ```
+ *
+ * @param transformer A function to transform.
+ * @param writableStrategy An object that optionally defines a queuing strategy for the stream.
+ * @param readableStrategy An object that optionally defines a queuing strategy for the stream.
+ */
+export function transformStreamFromGeneratorFunction<I, O>(
+  transformer: (src: AsyncIterable<I>) => Iterable<O> | AsyncIterable<O>,
+  writableStrategy?: QueuingStrategy<I>,
+  readableStrategy?: QueuingStrategy<O>,
+): TransformStream<I, O> {
+  const {
+    writable,
+    readable,
+  } = new TransformStream<I, I>(undefined, writableStrategy);
+
+  const iterable = transformer(readable);
+  const iterator: Iterator<O> | AsyncIterator<O> =
+    (iterable as AsyncIterable<O>)[Symbol.asyncIterator]?.() ??
+      (iterable as Iterable<O>)[Symbol.iterator]?.();
   return {
     writable,
-    readable: new ReadableStream<JSONValue>({
+    readable: new ReadableStream<O>({
       async pull(controller) {
-        const { done, value } = await dataIterator.next();
+        const { done, value } = await iterator.next();
         if (done) {
           controller.close();
           return;
         }
-
-        let parsed;
-        try {
-          parsed = JSON.parse(value);
-        } catch (error: unknown) {
-          if (error instanceof Error) {
-            throw new (error.constructor as ErrorConstructor)(
-              `${error.message} (parsing: '${value}')`,
-            );
-          }
-          throw error;
-        }
-        controller.enqueue(parsed);
+        controller.enqueue(value);
       },
-    }),
+      async cancel(...args) {
+        await readable.cancel(...args);
+      },
+    }, readableStrategy),
   };
 }
 
@@ -130,18 +140,22 @@ export class JSONLinesParseStream
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
   #separator: string;
-  constructor(options: ParseStreamOptions = {}) {
-    const { separator = "\n" } = options;
-    if (count(separator) !== 1) {
+  constructor({
+    separator = "\n",
+    writableStrategy,
+    readableStrategy,
+  }: ParseStreamOptions = {}) {
+    if (separator.length !== 1) {
       throw new Error(
-        `The separator length should be 1, but it was ${count(separator)}.`,
+        `The separator length should be 1, but it was ${separator.length}.`,
       );
     }
     this.#separator = separator;
 
-    const { writable, readable } = createStream(
-      this.#separatorDelimitedJSONJSONIterator.bind(this),
-      options,
+    const { writable, readable } = transformStreamFromGeneratorFunction(
+      this.#separatorDelimitedJSONIterator.bind(this),
+      writableStrategy,
+      readableStrategy,
     );
     this.writable = writable;
     this.readable = readable;
@@ -149,22 +163,19 @@ export class JSONLinesParseStream
 
   #targetString = "";
   #hasValue = false;
-  #blank = new Set(" \t\r\n");
-  async *#separatorDelimitedJSONJSONIterator(src: ReadableStream<string>) {
+  async *#separatorDelimitedJSONIterator(src: AsyncIterable<string>) {
     for await (const string of src) {
       let sliceStart = 0;
-      let i = -1;
-      for (const char of string) {
-        i += char.length;
+      for (let i = 0; i < string.length; i++) {
+        const char = string[i];
         if (char === this.#separator) {
           if (this.#hasValue) {
-            yield this.#targetString +
-              string.slice(sliceStart, i + 1 - char.length);
+            yield parse(this.#targetString + string.slice(sliceStart, i));
           }
           this.#hasValue = false;
           this.#targetString = "";
           sliceStart = i + 1;
-        } else if (!this.#hasValue && !this.#blank.has(char)) {
+        } else if (!this.#hasValue && !isBrankChar(char)) {
           // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
           this.#hasValue = true;
         }
@@ -172,7 +183,7 @@ export class JSONLinesParseStream
       this.#targetString += string.slice(sliceStart);
     }
     if (this.#hasValue) {
-      yield this.#targetString;
+      yield parse(this.#targetString);
     }
   }
 }
@@ -205,9 +216,10 @@ export class ConcatenatedJSONParseStream
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
   constructor(options: ParseStreamOptions = {}) {
-    const { writable, readable } = createStream(
+    const { writable, readable } = transformStreamFromGeneratorFunction(
       this.#concatenatedJSONIterator.bind(this),
-      options,
+      options.writableStrategy,
+      options.readableStrategy,
     );
     this.writable = writable;
     this.readable = readable;
@@ -215,17 +227,15 @@ export class ConcatenatedJSONParseStream
 
   #targetString = "";
   #hasValue = false;
-  #blank = new Set(" \t\r\n");
   #nestCount = 0;
   #readingString = false;
   #escapeNext = false;
-  async *#concatenatedJSONIterator(src: ReadableStream<string>) {
+  async *#concatenatedJSONIterator(src: AsyncIterable<string>) {
     // Counts the number of '{', '}', '[', ']', and when the nesting level reaches 0, concatenates and returns the string.
     for await (const string of src) {
       let sliceStart = 0;
-      let i = -1;
-      for (const char of string) {
-        i += char.length;
+      for (let i = 0; i < string.length; i++) {
+        const char = string[i];
 
         if (this.#readingString) {
           if (char === '"' && !this.#escapeNext) {
@@ -233,13 +243,29 @@ export class ConcatenatedJSONParseStream
 
             // When the nesting level is 0, it returns a string when '"' comes.
             if (this.#nestCount === 0 && this.#hasValue) {
-              yield this.#targetString + string.slice(sliceStart, i + 1);
+              yield parse(this.#targetString + string.slice(sliceStart, i + 1));
               this.#hasValue = false;
               this.#targetString = "";
               sliceStart = i + 1;
             }
           }
           this.#escapeNext = !this.#escapeNext && char === "\\";
+          continue;
+        }
+
+        // Parses number, true, false, null with a nesting level of 0.
+        // example: 'null["foo"]' => null, ["foo"]
+        // example: 'false{"foo": "bar"}' => null, {foo: "bar"}
+        if (
+          this.#hasValue && this.#nestCount === 0 &&
+          (char === "{" || char === "[" || char === '"' || char === " ")
+        ) {
+          yield parse(this.#targetString + string.slice(sliceStart, i));
+          this.#hasValue = false;
+          this.#readingString = false;
+          this.#targetString = "";
+          sliceStart = i;
+          i--;
           continue;
         }
 
@@ -256,19 +282,21 @@ export class ConcatenatedJSONParseStream
           case "]":
             this.#nestCount--;
             break;
-          default:
-            break;
         }
 
+        // parse object or array
         if (
-          this.#nestCount === 0 && this.#hasValue &&
-          (char === "}" || char === "]" || char === '"' || char === " ")
+          this.#hasValue && this.#nestCount === 0 &&
+          (char === "}" || char === "]")
         ) {
-          yield this.#targetString + string.slice(sliceStart, i + 1);
+          yield parse(this.#targetString + string.slice(sliceStart, i + 1));
           this.#hasValue = false;
           this.#targetString = "";
           sliceStart = i + 1;
-        } else if (!this.#hasValue && !this.#blank.has(char)) {
+          continue;
+        }
+
+        if (!this.#hasValue && !isBrankChar(char)) {
           // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
           this.#hasValue = true;
         }
@@ -276,7 +304,7 @@ export class ConcatenatedJSONParseStream
       this.#targetString += string.slice(sliceStart);
     }
     if (this.#hasValue) {
-      yield this.#targetString;
+      yield parse(this.#targetString);
     }
   }
 }
@@ -285,26 +313,15 @@ export class ConcatenatedJSONParseStream
  * stream to stringify JSONLines.
  *
  * ```ts
+ * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
  * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
- * const target = [
- *   { foo: "bar" },
- *   { baz: 100 },
- * ];
- * const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+ * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,
  *   write: true,
  * });
- * const readable = new ReadableStream({
- *   pull(controller) {
- *     for (const chunk of target) {
- *       controller.enqueue(chunk);
- *     }
- *     controller.close();
- *   },
- * });
  *
- * readable
+ * readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
  *   .pipeThrough(new JSONLinesStringifyStream())
  *   .pipeThrough(new TextEncoderStream())
  *   .pipeTo(file.writable)
@@ -338,26 +355,15 @@ export class JSONLinesStringifyStream extends TransformStream<unknown, string> {
  * stream to stringify concatenated JSON.
  *
  * ```ts
+ * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
  * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
  *
- * const target = [
- *   { foo: "bar" },
- *   { baz: 100 },
- * ];
  * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,
  *   write: true,
  * });
- * const readable = new ReadableStream({
- *   pull(controller) {
- *     for (const chunk of target) {
- *       controller.enqueue(chunk);
- *     }
- *     controller.close();
- *   },
- * });
  *
- * readable
+ * readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
  *   .pipeThrough(new ConcatenatedJSONStringifyStream())
  *   .pipeThrough(new TextEncoderStream())
  *   .pipeTo(file.writable)
@@ -376,11 +382,23 @@ export class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
   }
 }
 
-/** Count the number of characters in consideration of surrogate pairs. */
-function count(iterator: Iterable<unknown>) {
-  let count = 0;
-  for (const _ of iterator) {
-    count++;
+/** JSON.parse with detailed error message */
+function parse(text: string) {
+  try {
+    return JSON.parse(text) as JSONValue;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      // Truncate the string so that it is within 30 lengths.
+      const truncatedText = 30 < text.length ? `${text.slice(0, 30)}...` : text;
+      throw new (error.constructor as ErrorConstructor)(
+        `${error.message} (parsing: '${truncatedText}')`,
+      );
+    }
+    throw error;
   }
-  return count;
+}
+
+const blank = new Set(" \t\r\n");
+function isBrankChar(char: string) {
+  return blank.has(char);
 }

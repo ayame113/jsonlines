@@ -162,26 +162,15 @@ for await (const data of readable) {
 ### How to stringify JSON Lines
 
 ```ts
+import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
 import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
-const target = [
-  { foo: "bar" },
-  { baz: 100 },
-];
-const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
   create: true,
   write: true,
 });
-const readable = new ReadableStream({
-  pull(controller) {
-    for (const chunk of target) {
-      controller.enqueue(chunk);
-    }
-    controller.close();
-  },
-});
 
-readable
+readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
   .pipeThrough(new JSONLinesStringifyStream())
   .pipeThrough(new TextEncoderStream())
   .pipeTo(file.writable)
@@ -191,27 +180,16 @@ readable
 ### How to stringify json-seq
 
 ```ts
+import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
 import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
 const recordSeparator = "\x1E";
-const target = [
-  { foo: "bar" },
-  { baz: 100 },
-];
-const file = await Deno.open(new URL("./tmp.jsonl", import.meta.url), {
+const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
   create: true,
   write: true,
 });
-const readable = new ReadableStream({
-  pull(controller) {
-    for (const chunk of target) {
-      controller.enqueue(chunk);
-    }
-    controller.close();
-  },
-});
 
-readable
+readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
   .pipeThrough(new JSONLinesStringifyStream({ separator: recordSeparator }))
   .pipeThrough(new TextEncoderStream())
   .pipeTo(file.writable)
@@ -221,47 +199,19 @@ readable
 ### How to stringify concat-json
 
 ```ts
+import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
 import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.0.0/mod.ts";
 
-const target = [
-  { foo: "bar" },
-  { baz: 100 },
-];
 const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
   create: true,
   write: true,
 });
-const readable = new ReadableStream({
-  pull(controller) {
-    for (const chunk of target) {
-      controller.enqueue(chunk);
-    }
-    controller.close();
-  },
-});
 
-readable
+readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
   .pipeThrough(new ConcatenatedJSONStringifyStream())
   .pipeThrough(new TextEncoderStream())
   .pipeTo(file.writable)
   .then(() => console.log("write success"));
-```
-
-## limit
-
-When parsing concat-json, it cannot be parsed unless it is blank immediately
-after the number, null, true and false.
-
-In other words, this cannot be parsed:
-
-```json
-100 200{"foo": "bar"}
-```
-
-But this can be parsed:
-
-```json
-100 200 {"foo": "bar"}
 ```
 
 ## note
