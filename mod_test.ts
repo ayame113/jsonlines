@@ -578,6 +578,23 @@ Deno.test({
 });
 
 Deno.test({
+  name: "transformStreamFromGeneratorFunction: iterable (not async)",
+  async fn() {
+    const reader = readableStreamFromIterable([0, 1, 2])
+      .pipeThrough(transformStreamFromGeneratorFunction(function* (_src) {
+        yield 0;
+        yield 100;
+        yield 200;
+      }));
+    const res = [];
+    for await (const i of reader) {
+      res.push(i);
+    }
+    assertEquals(res, [0, 100, 200]);
+  },
+});
+
+Deno.test({
   name: "transformStreamFromGeneratorFunction: cancel",
   async fn() {
     let callCount = 0;
