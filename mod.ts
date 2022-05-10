@@ -30,6 +30,12 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
   };
 }
 
+// avoid dnt typecheck error
+type _QueuingStrategy<T> = QueuingStrategy extends
+  ConstructorParameters<typeof TransformStream> ? QueuingStrategy<T>
+  : // deno-lint-ignore no-explicit-any
+  any;
+
 export type JSONValue =
   | { [key: string]: JSONValue }
   | JSONValue[]
@@ -41,18 +47,18 @@ export interface ParseStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly writableStrategy?: QueuingStrategy<string>;
+  readonly writableStrategy?: _QueuingStrategy<string>;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly readableStrategy?: QueuingStrategy<JSONValue>;
+  readonly readableStrategy?: _QueuingStrategy<JSONValue>;
 }
 
 export interface StringifyStreamOptions {
   /**a character to separate JSON. The character length must be 1. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly writableStrategy?: QueuingStrategy<unknown>;
+  readonly writableStrategy?: _QueuingStrategy<unknown>;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
-  readonly readableStrategy?: QueuingStrategy<string>;
+  readonly readableStrategy?: _QueuingStrategy<string>;
 }
 
 //output: 0, 100, 200
@@ -82,8 +88,8 @@ export interface StringifyStreamOptions {
  */
 export function transformStreamFromGeneratorFunction<I, O>(
   transformer: (src: AsyncIterable<I>) => Iterable<O> | AsyncIterable<O>,
-  writableStrategy?: QueuingStrategy<I>,
-  readableStrategy?: QueuingStrategy<O>,
+  writableStrategy?: _QueuingStrategy<I>,
+  readableStrategy?: _QueuingStrategy<O>,
 ): TransformStream<I, O> {
   const {
     writable,
