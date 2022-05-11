@@ -434,13 +434,15 @@ Deno.test({
 Deno.test({
   name: "parse(separator): special separator",
   async fn() {
-    const separator = "\x1E";
-    await assertValidParse(
-      JSONLinesParseStream,
-      [`${separator}{"foo": "bar"}${separator}{"foo": "bar"}${separator}`],
-      [{ foo: "bar" }, { foo: "bar" }],
-      { separator },
-    );
+    const separators = ["\x1E", "xxxxx", "😊", "🦕"];
+    for (const separator of separators) {
+      await assertValidParse(
+        JSONLinesParseStream,
+        [`${separator}{"foo": "bar"}${separator}{"foo": "bar"}${separator}`],
+        [{ foo: "bar" }, { foo: "bar" }],
+        { separator },
+      );
+    }
   },
 });
 
@@ -494,30 +496,6 @@ Deno.test({
       SyntaxError,
       `Unexpected end of JSON input (parsing: ' {"foo": ')`,
     );
-  },
-});
-
-Deno.test({
-  name: "parse(separator): invalid separator",
-  async fn() {
-    const separator = "aa";
-    await assertInvalidParse(
-      JSONLinesParseStream,
-      [`{"foo": "bar"}${separator}{"foo": "bar"}`],
-      { separator },
-      Error,
-      "The separator length should be 1, but it was 2.",
-    );
-    {
-      const separator = "👪";
-      await assertInvalidParse(
-        JSONLinesParseStream,
-        [`{"foo": "bar"}${separator}{"foo": "bar"}`],
-        { separator },
-        Error,
-        "The separator length should be 1, but it was 2.",
-      );
-    }
   },
 });
 

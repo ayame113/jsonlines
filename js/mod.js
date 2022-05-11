@@ -1,5 +1,7 @@
-// polyfill for ReadableStream.prototype[Symbol.asyncIterator]
-// https://bugs.chromium.org/p/chromium/issues/detail?id=929585#c10
+// deno-fmt-ignore-file
+// deno-lint-ignore-file
+// This code was bundled using `deno bundle` and it's not recommended to edit it manually
+
 if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
     ReadableStream.prototype[Symbol.asyncIterator] = async function*() {
         const reader = this.getReader();
@@ -14,31 +16,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         }
     };
 }
-//output: 0, 100, 200
-/**
- * Convert the generator function into a TransformStream.
- *
- * ```ts
- * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { transformStreamFromGeneratorFunction } from "./mod.ts";
- *
- * const reader = readableStreamFromIterable([0, 1, 2])
- *   .pipeThrough(transformStreamFromGeneratorFunction(async function* (src) {
- *     for await (const chunk of src) {
- *       yield chunk * 100;
- *     }
- *   }));
- *
- * for await (const chunk of reader) {
- *   console.log(chunk);
- * }
- * // output: 0, 100, 200
- * ```
- *
- * @param transformer A function to transform.
- * @param writableStrategy An object that optionally defines a queuing strategy for the stream.
- * @param readableStrategy An object that optionally defines a queuing strategy for the stream.
- */ export function transformStreamFromGeneratorFunction(transformer, writableStrategy, readableStrategy) {
+function transformStreamFromGeneratorFunction(transformer, writableStrategy, readableStrategy) {
     const { writable , readable ,  } = new TransformStream(undefined, writableStrategy);
     const iterable = transformer(readable);
     const iterator = iterable[Symbol.asyncIterator]?.() ?? iterable[Symbol.iterator]?.();
@@ -59,91 +37,93 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         }, readableStrategy)
     };
 }
-/**
- * stream to parse JSONLines.
- *
- * ```ts
- * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
- *
- * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
- * const { body } = await fetch(`${url}`);
- *
- * const readable = body!
- *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new JSONLinesParseStream());
- *
- * for await (const data of readable) {
- *   console.log(data);
- * }
- * ```
- */ export class JSONLinesParseStream {
-    #separator;
-    /**
-   * @param options
-   * @param options.separator a character to separate JSON. The character length must be 1. The default is '\n'.
-   * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   */ constructor({ separator ="\n" , writableStrategy , readableStrategy  } = {
-    }){
-        if (separator.length !== 1) {
-            throw new Error(`The separator length should be 1, but it was ${separator.length}.`);
-        }
-        this.#separator = separator;
-        const { writable , readable  } = transformStreamFromGeneratorFunction(this.#separatorDelimitedJSONIterator.bind(this), writableStrategy, readableStrategy);
-        this.writable = writable;
-        this.readable = readable;
+"\r".charCodeAt(0);
+"\n".charCodeAt(0);
+class TextDelimiterStream extends TransformStream {
+    #buf = "";
+    #delimiter;
+    #inspectIndex = 0;
+    #matchIndex = 0;
+    #delimLPS;
+    constructor(delimiter){
+        super({
+            transform: (chunk5, controller7)=>{
+                this.#handle(chunk5, controller7);
+            },
+            flush: (controller8)=>{
+                controller8.enqueue(this.#buf);
+            }
+        });
+        this.#delimiter = delimiter;
+        this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
     }
-    #targetString = "";
-    #hasValue = false;
-    async *#separatorDelimitedJSONIterator(src) {
-        for await (const string of src){
-            let sliceStart = 0;
-            for(let i = 0; i < string.length; i++){
-                const char = string[i];
-                if (char === this.#separator) {
-                    if (this.#hasValue) {
-                        yield parse(this.#targetString + string.slice(sliceStart, i));
-                    }
-                    this.#hasValue = false;
-                    this.#targetString = "";
-                    sliceStart = i + 1;
-                } else if (!this.#hasValue && !isBrankChar(char)) {
-                    // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
-                    this.#hasValue = true;
+     #handle(chunk6, controller9) {
+        this.#buf += chunk6;
+        let localIndex = 0;
+        while(this.#inspectIndex < this.#buf.length){
+            if (chunk6[localIndex] === this.#delimiter[this.#matchIndex]) {
+                this.#inspectIndex++;
+                localIndex++;
+                this.#matchIndex++;
+                if (this.#matchIndex === this.#delimiter.length) {
+                    const matchEnd = this.#inspectIndex - this.#delimiter.length;
+                    const readyString = this.#buf.slice(0, matchEnd);
+                    controller9.enqueue(readyString);
+                    this.#buf = this.#buf.slice(this.#inspectIndex);
+                    this.#inspectIndex = 0;
+                    this.#matchIndex = 0;
+                }
+            } else {
+                if (this.#matchIndex === 0) {
+                    this.#inspectIndex++;
+                    localIndex++;
+                } else {
+                    this.#matchIndex = this.#delimLPS[this.#matchIndex - 1];
                 }
             }
-            this.#targetString += string.slice(sliceStart);
-        }
-        if (this.#hasValue) {
-            yield parse(this.#targetString);
         }
     }
 }
-/**
- * stream to parse concatenated JSON.
- *
- * ```ts
- * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
- *
- * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
- * const { body } = await fetch(`${url}`);
- *
- * const readable = body!
- *   .pipeThrough(new TextDecoderStream())
- *   .pipeThrough(new ConcatenatedJSONParseStream());
- *
- * for await (const data of readable) {
- *   console.log(data);
- * }
- * ```
- */ export class ConcatenatedJSONParseStream {
-    /**
-   * @param options
-   * @param options.separator This parameter will be ignored.
-   * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   */ constructor(options = {
-    }){
+function createLPS(pat) {
+    const lps = new Uint8Array(pat.length);
+    lps[0] = 0;
+    let prefixEnd = 0;
+    let i = 1;
+    while(i < lps.length){
+        if (pat[i] == pat[prefixEnd]) {
+            prefixEnd++;
+            lps[i] = prefixEnd;
+            i++;
+        } else if (prefixEnd === 0) {
+            lps[i] = 0;
+            i++;
+        } else {
+            prefixEnd = lps[prefixEnd - 1];
+        }
+    }
+    return lps;
+}
+class JSONLinesParseStream {
+    writable;
+    readable;
+    constructor({ separator ="\n" , writableStrategy , readableStrategy  } = {}){
+        const delimiterStream = new TextDelimiterStream(separator);
+        const jsonParserStream = new TransformStream({
+            transform: this.#separatorDelimitedJSONParser
+        }, writableStrategy, readableStrategy);
+        this.writable = delimiterStream.writable;
+        this.readable = delimiterStream.readable.pipeThrough(jsonParserStream);
+    }
+    #separatorDelimitedJSONParser = (chunk, controller)=>{
+        if (!isBrankString(chunk)) {
+            controller.enqueue(parse(chunk));
+        }
+    };
+}
+class ConcatenatedJSONParseStream {
+    writable;
+    readable;
+    constructor(options = {}){
         const { writable , readable  } = transformStreamFromGeneratorFunction(this.#concatenatedJSONIterator.bind(this), options.writableStrategy, options.readableStrategy);
         this.writable = writable;
         this.readable = readable;
@@ -154,15 +134,13 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
     #readingString = false;
     #escapeNext = false;
     async *#concatenatedJSONIterator(src) {
-        // Counts the number of '{', '}', '[', ']', and when the nesting level reaches 0, concatenates and returns the string.
         for await (const string of src){
             let sliceStart = 0;
             for(let i = 0; i < string.length; i++){
-                const char = string[i];
+                const __char = string[i];
                 if (this.#readingString) {
-                    if (char === '"' && !this.#escapeNext) {
+                    if (__char === '"' && !this.#escapeNext) {
                         this.#readingString = false;
-                        // When the nesting level is 0, it returns a string when '"' comes.
                         if (this.#nestCount === 0 && this.#hasValue) {
                             yield parse(this.#targetString + string.slice(sliceStart, i + 1));
                             this.#hasValue = false;
@@ -170,13 +148,10 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
                             sliceStart = i + 1;
                         }
                     }
-                    this.#escapeNext = !this.#escapeNext && char === "\\";
+                    this.#escapeNext = !this.#escapeNext && __char === "\\";
                     continue;
                 }
-                // Parses number, true, false, null with a nesting level of 0.
-                // example: 'null["foo"]' => null, ["foo"]
-                // example: 'false{"foo": "bar"}' => null, {foo: "bar"}
-                if (this.#hasValue && this.#nestCount === 0 && (char === "{" || char === "[" || char === '"' || char === " ")) {
+                if (this.#hasValue && this.#nestCount === 0 && (__char === "{" || __char === "[" || __char === '"' || __char === " ")) {
                     yield parse(this.#targetString + string.slice(sliceStart, i));
                     this.#hasValue = false;
                     this.#readingString = false;
@@ -185,7 +160,7 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
                     i--;
                     continue;
                 }
-                switch(char){
+                switch(__char){
                     case '"':
                         this.#readingString = true;
                         this.#escapeNext = false;
@@ -199,16 +174,14 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
                         this.#nestCount--;
                         break;
                 }
-                // parse object or array
-                if (this.#hasValue && this.#nestCount === 0 && (char === "}" || char === "]")) {
+                if (this.#hasValue && this.#nestCount === 0 && (__char === "}" || __char === "]")) {
                     yield parse(this.#targetString + string.slice(sliceStart, i + 1));
                     this.#hasValue = false;
                     this.#targetString = "";
                     sliceStart = i + 1;
                     continue;
                 }
-                if (!this.#hasValue && !isBrankChar(char)) {
-                    // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
+                if (!this.#hasValue && !isBrankChar(__char)) {
                     this.#hasValue = true;
                 }
             }
@@ -219,35 +192,34 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         }
     }
 }
-/**
- * stream to stringify JSONLines.
- *
- * ```ts
- * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
- *
- * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
- *   create: true,
- *   write: true,
- * });
- *
- * readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
- *   .pipeThrough(new JSONLinesStringifyStream())
- *   .pipeThrough(new TextEncoderStream())
- *   .pipeTo(file.writable)
- *   .then(() => console.log("write success"));
- * ```
- */ export class JSONLinesStringifyStream extends TransformStream {
-    /**
-   * @param options
-   * @param options.separator a character to separate JSON. The default is '\n'.
-   * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   */ constructor(options = {
-    }){
+function parse(text) {
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        if (error instanceof Error) {
+            const truncatedText = 30 < text.length ? `${text.slice(0, 30)}...` : text;
+            throw new error.constructor(`${error.message} (parsing: '${truncatedText}')`);
+        }
+        throw error;
+    }
+}
+const blank = new Set(" \t\r\n");
+function isBrankChar(__char) {
+    return blank.has(__char);
+}
+const branks = /[^ \t\r\n]/;
+function isBrankString(str) {
+    return !branks.test(str);
+}
+class JSONLinesStringifyStream extends TransformStream {
+    constructor(options = {}){
         const { separator ="\n" , writableStrategy , readableStrategy  } = options;
         const [prefix, suffix] = separator.includes("\n") ? [
-            "", separator] : [separator, "\n"
+            "",
+            separator
+        ] : [
+            separator,
+            "\n"
         ];
         super({
             transform (chunk, controller) {
@@ -256,32 +228,8 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         }, writableStrategy, readableStrategy);
     }
 }
-/**
- * stream to stringify concatenated JSON.
- *
- * ```ts
- * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
- *
- * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
- *   create: true,
- *   write: true,
- * });
- *
- * readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
- *   .pipeThrough(new ConcatenatedJSONStringifyStream())
- *   .pipeThrough(new TextEncoderStream())
- *   .pipeTo(file.writable)
- *   .then(() => console.log("write success"));
- * ```
- */ export class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
-    /**
-   * @param options
-   * @param options.separator This parameter will be ignored.
-   * @param options.writableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   * @param options.readableStrategy Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream.
-   */ constructor(options = {
-    }){
+class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
+    constructor(options = {}){
         const { writableStrategy , readableStrategy  } = options;
         super({
             separator: "\n",
@@ -290,19 +238,6 @@ if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
         });
     }
 }
-/** JSON.parse with detailed error message */ function parse(text) {
-    try {
-        return JSON.parse(text);
-    } catch (error) {
-        if (error instanceof Error) {
-            // Truncate the string so that it is within 30 lengths.
-            const truncatedText = 30 < text.length ? `${text.slice(0, 30)}...` : text;
-            throw new error.constructor(`${error.message} (parsing: '${truncatedText}')`);
-        }
-        throw error;
-    }
-}
-const blank = new Set(" \t\r\n");
-function isBrankChar(char) {
-    return blank.has(char);
-}
+export { transformStreamFromGeneratorFunction as transformStreamFromGeneratorFunction };
+export { ConcatenatedJSONParseStream as ConcatenatedJSONParseStream, JSONLinesParseStream as JSONLinesParseStream };
+export { ConcatenatedJSONStringifyStream as ConcatenatedJSONStringifyStream, JSONLinesStringifyStream as JSONLinesStringifyStream };

@@ -1,30 +1,35 @@
-import { transform } from "https://deno.land/x/swc@0.1.4/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.138.0/path/mod.ts";
 
-function tsToJs(content: string) {
-  return transform(content, {
-    // minify: true,
-    jsc: {
-      target: "es2021",
-      parser: {
-        syntax: "typescript",
-      },
-    },
-    // deno-lint-ignore no-explicit-any
-  } as any).code;
+const input = fromFileUrl(new URL("../mod.ts", import.meta.url));
+const output = fromFileUrl(new URL("../js/mod.js", import.meta.url));
+const { status } = await Deno.spawn(Deno.execPath(), {
+  args: ["bundle", input, output],
+  stdout: "inherit",
+  stderr: "inherit",
+});
+if (!status.success) {
+  throw new Error("deno bundle: failed");
 }
-{
-  const ts = await Deno.readTextFile(new URL("../mod.ts", import.meta.url));
-  const js = tsToJs(ts);
-  await Deno.writeTextFile(new URL("../js/mod.js", import.meta.url), js, {
-    create: true,
-  });
-}
-{
-  const ts = await Deno.readTextFile(
-    new URL("../mod_test.ts", import.meta.url),
-  );
-  const js = tsToJs(ts).replaceAll("./mod.ts", "./mod.js");
-  await Deno.writeTextFile(new URL("../js/mod_test.js", import.meta.url), js, {
-    create: true,
-  });
+
+const importMap = {
+  "imports": {
+    [`${new URL("../mod.ts", import.meta.url)}`]: `${new URL(
+      "../js/mod.js",
+      import.meta.url,
+    )}`,
+  },
+};
+const testFile = fromFileUrl(new URL("../mod_test.ts", import.meta.url));
+const { status: testStatus } = await Deno.spawn(Deno.execPath(), {
+  args: [
+    "test",
+    testFile,
+    `--import-map=data:application/json,${JSON.stringify(importMap)}`,
+    "--no-check",
+  ],
+  stdout: "inherit",
+  stderr: "inherit",
+});
+if (!testStatus.success) {
+  throw new Error("deno test: failed");
 }
