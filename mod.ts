@@ -137,7 +137,6 @@ export class JSONLinesParseStream
   implements TransformStream<string, JSONValue> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
-  #separator: string;
   /**
    * @param options
    * @param options.separator a character to separate JSON. The character length must be 1. The default is '\n'.
@@ -149,47 +148,27 @@ export class JSONLinesParseStream
     writableStrategy,
     readableStrategy,
   }: ParseStreamOptions = {}) {
-    if (separator.length !== 1) {
-      throw new Error(
-        `The separator length should be 1, but it was ${separator.length}.`,
-      );
-    }
-    this.#separator = separator;
-
-    const { writable, readable } = transformStreamFromGeneratorFunction(
-      this.#separatorDelimitedJSONIterator.bind(this),
+    const delimiterStream = new TextDelimiterStream(separator);
+    const jsonParserStream = new TransformStream(
+      {
+        transform: this.#separatorDelimitedJSONParser,
+      },
       writableStrategy,
       readableStrategy,
     );
-    this.writable = writable;
-    this.readable = readable;
+
+    this.writable = delimiterStream.writable;
+    this.readable = delimiterStream.readable.pipeThrough(jsonParserStream);
   }
 
-  #targetString = "";
-  #hasValue = false;
-  async *#separatorDelimitedJSONIterator(src: AsyncIterable<string>) {
-    for await (const string of src) {
-      let sliceStart = 0;
-      for (let i = 0; i < string.length; i++) {
-        const char = string[i];
-        if (char === this.#separator) {
-          if (this.#hasValue) {
-            yield parse(this.#targetString + string.slice(sliceStart, i));
-          }
-          this.#hasValue = false;
-          this.#targetString = "";
-          sliceStart = i + 1;
-        } else if (!this.#hasValue && !isBrankChar(char)) {
-          // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
-          this.#hasValue = true;
-        }
-      }
-      this.#targetString += string.slice(sliceStart);
+  #separatorDelimitedJSONParser = (
+    chunk: string,
+    controller: TransformStreamDefaultController<JSONValue>,
+  ) => {
+    if (!isBrankString(chunk)) {
+      controller.enqueue(parse(chunk));
     }
-    if (this.#hasValue) {
-      yield parse(this.#targetString);
-    }
-  }
+  };
 }
 
 /**
@@ -408,4 +387,86 @@ function parse(text: string) {
 const blank = new Set(" \t\r\n");
 function isBrankChar(char: string) {
   return blank.has(char);
+}
+
+const branks = /[^ \t\r\n]/;
+function isBrankString(str: string) {
+  return !branks.test(str);
+}
+
+// from deno_std
+
+export class TextDelimiterStream extends TransformStream<string, string> {
+  #buf = "";
+  #delimiter: string;
+  #inspectIndex = 0;
+  #matchIndex = 0;
+  #delimLPS: Uint8Array;
+
+  constructor(delimiter: string) {
+    super({
+      transform: (chunk, controller) => {
+        this.#handle(chunk, controller);
+      },
+      flush: (controller) => {
+        controller.enqueue(this.#buf);
+      },
+    });
+
+    this.#delimiter = delimiter;
+    this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
+  }
+
+  #handle(
+    chunk: string,
+    controller: TransformStreamDefaultController<string>,
+  ) {
+    this.#buf += chunk;
+    let localIndex = 0;
+    while (this.#inspectIndex < this.#buf.length) {
+      if (chunk[localIndex] === this.#delimiter[this.#matchIndex]) {
+        this.#inspectIndex++;
+        localIndex++;
+        this.#matchIndex++;
+        if (this.#matchIndex === this.#delimiter.length) {
+          // Full match
+          const matchEnd = this.#inspectIndex - this.#delimiter.length;
+          const readyString = this.#buf.slice(0, matchEnd);
+          controller.enqueue(readyString);
+          // Reset match, different from KMP.
+          this.#buf = this.#buf.slice(this.#inspectIndex);
+          this.#inspectIndex = 0;
+          this.#matchIndex = 0;
+        }
+      } else {
+        if (this.#matchIndex === 0) {
+          this.#inspectIndex++;
+          localIndex++;
+        } else {
+          this.#matchIndex = this.#delimLPS[this.#matchIndex - 1];
+        }
+      }
+    }
+  }
+}
+
+/** Generate longest proper prefix which is also suffix array. */
+function createLPS(pat: Uint8Array): Uint8Array {
+  const lps = new Uint8Array(pat.length);
+  lps[0] = 0;
+  let prefixEnd = 0;
+  let i = 1;
+  while (i < lps.length) {
+    if (pat[i] == pat[prefixEnd]) {
+      prefixEnd++;
+      lps[i] = prefixEnd;
+      i++;
+    } else if (prefixEnd === 0) {
+      lps[i] = 0;
+      i++;
+    } else {
+      prefixEnd = lps[prefixEnd - 1];
+    }
+  }
+  return lps;
 }

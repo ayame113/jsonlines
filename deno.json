@@ -6,7 +6,7 @@
     "test:fmt": "deno fmt --check",
     "fmt": "deno fmt",
     "check": "deno check ./mod.ts",
-    "transpile": "deno run --allow-read=. --allow-write=. ./dev/transpile.ts && deno task test",
+    "transpile": "deno run --allow-run --allow-read --unstable ./dev/transpile.ts",
     "build-npm": "deno run --allow-read --allow-write --allow-net --allow-env --allow-run ./dev/build_npm.ts"
   },
   "lint": {
