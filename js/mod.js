@@ -107,18 +107,16 @@ class JSONLinesParseStream {
     writable;
     readable;
     constructor({ separator ="\n" , writableStrategy , readableStrategy  } = {}){
-        const delimiterStream = new TextDelimiterStream(separator);
-        const jsonParserStream = new TransformStream({
-            transform: this.#separatorDelimitedJSONParser
-        }, writableStrategy, readableStrategy);
-        this.writable = delimiterStream.writable;
-        this.readable = delimiterStream.readable.pipeThrough(jsonParserStream);
+        const { writable , readable  } = new TextDelimiterStream(separator);
+        this.writable = writable;
+        this.readable = readable.pipeThrough(new TransformStream({
+            transform (chunk, controller) {
+                if (!isBrankString(chunk)) {
+                    controller.enqueue(parse(chunk));
+                }
+            }
+        }, writableStrategy, readableStrategy));
     }
-    #separatorDelimitedJSONParser = (chunk, controller)=>{
-        if (!isBrankString(chunk)) {
-            controller.enqueue(parse(chunk));
-        }
-    };
 }
 class ConcatenatedJSONParseStream {
     writable;

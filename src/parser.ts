@@ -52,27 +52,25 @@ export class JSONLinesParseStream
     writableStrategy,
     readableStrategy,
   }: ParseStreamOptions = {}) {
-    const delimiterStream = new TextDelimiterStream(separator);
-    const jsonParserStream = new TransformStream(
-      {
-        transform: this.#separatorDelimitedJSONParser,
-      },
-      writableStrategy,
-      readableStrategy,
+    const { writable, readable } = new TextDelimiterStream(separator);
+    this.writable = writable;
+    this.readable = readable.pipeThrough(
+      new TransformStream(
+        {
+          transform(
+            chunk: string,
+            controller: TransformStreamDefaultController<JSONValue>,
+          ) {
+            if (!isBrankString(chunk)) {
+              controller.enqueue(parse(chunk));
+            }
+          },
+        },
+        writableStrategy,
+        readableStrategy,
+      ),
     );
-
-    this.writable = delimiterStream.writable;
-    this.readable = delimiterStream.readable.pipeThrough(jsonParserStream);
   }
-
-  #separatorDelimitedJSONParser = (
-    chunk: string,
-    controller: TransformStreamDefaultController<JSONValue>,
-  ) => {
-    if (!isBrankString(chunk)) {
-      controller.enqueue(parse(chunk));
-    }
-  };
 }
 
 /**
