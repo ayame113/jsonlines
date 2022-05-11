@@ -37,6 +37,72 @@ function transformStreamFromGeneratorFunction(transformer, writableStrategy, rea
         }, readableStrategy)
     };
 }
+"\r".charCodeAt(0);
+"\n".charCodeAt(0);
+class TextDelimiterStream extends TransformStream {
+    #buf = "";
+    #delimiter;
+    #inspectIndex = 0;
+    #matchIndex = 0;
+    #delimLPS;
+    constructor(delimiter){
+        super({
+            transform: (chunk5, controller7)=>{
+                this.#handle(chunk5, controller7);
+            },
+            flush: (controller8)=>{
+                controller8.enqueue(this.#buf);
+            }
+        });
+        this.#delimiter = delimiter;
+        this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
+    }
+     #handle(chunk6, controller9) {
+        this.#buf += chunk6;
+        let localIndex = 0;
+        while(this.#inspectIndex < this.#buf.length){
+            if (chunk6[localIndex] === this.#delimiter[this.#matchIndex]) {
+                this.#inspectIndex++;
+                localIndex++;
+                this.#matchIndex++;
+                if (this.#matchIndex === this.#delimiter.length) {
+                    const matchEnd = this.#inspectIndex - this.#delimiter.length;
+                    const readyString = this.#buf.slice(0, matchEnd);
+                    controller9.enqueue(readyString);
+                    this.#buf = this.#buf.slice(this.#inspectIndex);
+                    this.#inspectIndex = 0;
+                    this.#matchIndex = 0;
+                }
+            } else {
+                if (this.#matchIndex === 0) {
+                    this.#inspectIndex++;
+                    localIndex++;
+                } else {
+                    this.#matchIndex = this.#delimLPS[this.#matchIndex - 1];
+                }
+            }
+        }
+    }
+}
+function createLPS(pat) {
+    const lps = new Uint8Array(pat.length);
+    lps[0] = 0;
+    let prefixEnd = 0;
+    let i = 1;
+    while(i < lps.length){
+        if (pat[i] == pat[prefixEnd]) {
+            prefixEnd++;
+            lps[i] = prefixEnd;
+            i++;
+        } else if (prefixEnd === 0) {
+            lps[i] = 0;
+            i++;
+        } else {
+            prefixEnd = lps[prefixEnd - 1];
+        }
+    }
+    return lps;
+}
 class JSONLinesParseStream {
     writable;
     readable;
@@ -126,6 +192,25 @@ class ConcatenatedJSONParseStream {
         }
     }
 }
+function parse(text) {
+    try {
+        return JSON.parse(text);
+    } catch (error) {
+        if (error instanceof Error) {
+            const truncatedText = 30 < text.length ? `${text.slice(0, 30)}...` : text;
+            throw new error.constructor(`${error.message} (parsing: '${truncatedText}')`);
+        }
+        throw error;
+    }
+}
+const blank = new Set(" \t\r\n");
+function isBrankChar(__char) {
+    return blank.has(__char);
+}
+const branks = /[^ \t\r\n]/;
+function isBrankString(str) {
+    return !branks.test(str);
+}
 class JSONLinesStringifyStream extends TransformStream {
     constructor(options = {}){
         const { separator ="\n" , writableStrategy , readableStrategy  } = options;
@@ -153,92 +238,6 @@ class ConcatenatedJSONStringifyStream extends JSONLinesStringifyStream {
         });
     }
 }
-function parse(text) {
-    try {
-        return JSON.parse(text);
-    } catch (error) {
-        if (error instanceof Error) {
-            const truncatedText = 30 < text.length ? `${text.slice(0, 30)}...` : text;
-            throw new error.constructor(`${error.message} (parsing: '${truncatedText}')`);
-        }
-        throw error;
-    }
-}
-const blank = new Set(" \t\r\n");
-function isBrankChar(__char) {
-    return blank.has(__char);
-}
-const branks = /[^ \t\r\n]/;
-function isBrankString(str) {
-    return !branks.test(str);
-}
-class TextDelimiterStream extends TransformStream {
-    #buf = "";
-    #delimiter;
-    #inspectIndex = 0;
-    #matchIndex = 0;
-    #delimLPS;
-    constructor(delimiter){
-        super({
-            transform: (chunk, controller)=>{
-                this.#handle(chunk, controller);
-            },
-            flush: (controller)=>{
-                controller.enqueue(this.#buf);
-            }
-        });
-        this.#delimiter = delimiter;
-        this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
-    }
-     #handle(chunk, controller) {
-        this.#buf += chunk;
-        let localIndex = 0;
-        while(this.#inspectIndex < this.#buf.length){
-            if (chunk[localIndex] === this.#delimiter[this.#matchIndex]) {
-                this.#inspectIndex++;
-                localIndex++;
-                this.#matchIndex++;
-                if (this.#matchIndex === this.#delimiter.length) {
-                    const matchEnd = this.#inspectIndex - this.#delimiter.length;
-                    const readyString = this.#buf.slice(0, matchEnd);
-                    controller.enqueue(readyString);
-                    this.#buf = this.#buf.slice(this.#inspectIndex);
-                    this.#inspectIndex = 0;
-                    this.#matchIndex = 0;
-                }
-            } else {
-                if (this.#matchIndex === 0) {
-                    this.#inspectIndex++;
-                    localIndex++;
-                } else {
-                    this.#matchIndex = this.#delimLPS[this.#matchIndex - 1];
-                }
-            }
-        }
-    }
-}
-function createLPS(pat) {
-    const lps = new Uint8Array(pat.length);
-    lps[0] = 0;
-    let prefixEnd = 0;
-    let i = 1;
-    while(i < lps.length){
-        if (pat[i] == pat[prefixEnd]) {
-            prefixEnd++;
-            lps[i] = prefixEnd;
-            i++;
-        } else if (prefixEnd === 0) {
-            lps[i] = 0;
-            i++;
-        } else {
-            prefixEnd = lps[prefixEnd - 1];
-        }
-    }
-    return lps;
-}
 export { transformStreamFromGeneratorFunction as transformStreamFromGeneratorFunction };
-export { JSONLinesParseStream as JSONLinesParseStream };
-export { ConcatenatedJSONParseStream as ConcatenatedJSONParseStream };
-export { JSONLinesStringifyStream as JSONLinesStringifyStream };
-export { ConcatenatedJSONStringifyStream as ConcatenatedJSONStringifyStream };
-export { TextDelimiterStream as TextDelimiterStream };
+export { ConcatenatedJSONParseStream as ConcatenatedJSONParseStream, JSONLinesParseStream as JSONLinesParseStream };
+export { ConcatenatedJSONStringifyStream as ConcatenatedJSONStringifyStream, JSONLinesStringifyStream as JSONLinesStringifyStream };
