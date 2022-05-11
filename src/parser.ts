@@ -23,7 +23,7 @@ export interface ParseStreamOptions {
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -79,7 +79,7 @@ export class JSONLinesParseStream
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -105,7 +105,7 @@ export class ConcatenatedJSONParseStream
    */
   constructor(options: ParseStreamOptions = {}) {
     const { writable, readable } = transformStreamFromGeneratorFunction(
-      this.#concatenatedJSONIterator.bind(this),
+      this.#concatenatedJSONIterator,
       options.writableStrategy,
       options.readableStrategy,
     );
@@ -113,31 +113,31 @@ export class ConcatenatedJSONParseStream
     this.readable = readable;
   }
 
-  #targetString = "";
-  #hasValue = false;
-  #nestCount = 0;
-  #readingString = false;
-  #escapeNext = false;
   async *#concatenatedJSONIterator(src: AsyncIterable<string>) {
     // Counts the number of '{', '}', '[', ']', and when the nesting level reaches 0, concatenates and returns the string.
+    let targetString = "";
+    let hasValue = false;
+    let nestCount = 0;
+    let readingString = false;
+    let escapeNext = false;
     for await (const string of src) {
       let sliceStart = 0;
       for (let i = 0; i < string.length; i++) {
         const char = string[i];
 
-        if (this.#readingString) {
-          if (char === '"' && !this.#escapeNext) {
-            this.#readingString = false;
+        if (readingString) {
+          if (char === '"' && !escapeNext) {
+            readingString = false;
 
             // When the nesting level is 0, it returns a string when '"' comes.
-            if (this.#nestCount === 0 && this.#hasValue) {
-              yield parse(this.#targetString + string.slice(sliceStart, i + 1));
-              this.#hasValue = false;
-              this.#targetString = "";
+            if (nestCount === 0 && hasValue) {
+              yield parse(targetString + string.slice(sliceStart, i + 1));
+              hasValue = false;
+              targetString = "";
               sliceStart = i + 1;
             }
           }
-          this.#escapeNext = !this.#escapeNext && char === "\\";
+          escapeNext = !escapeNext && char === "\\";
           continue;
         }
 
@@ -145,13 +145,13 @@ export class ConcatenatedJSONParseStream
         // example: 'null["foo"]' => null, ["foo"]
         // example: 'false{"foo": "bar"}' => null, {foo: "bar"}
         if (
-          this.#hasValue && this.#nestCount === 0 &&
+          hasValue && nestCount === 0 &&
           (char === "{" || char === "[" || char === '"' || char === " ")
         ) {
-          yield parse(this.#targetString + string.slice(sliceStart, i));
-          this.#hasValue = false;
-          this.#readingString = false;
-          this.#targetString = "";
+          yield parse(targetString + string.slice(sliceStart, i));
+          hasValue = false;
+          readingString = false;
+          targetString = "";
           sliceStart = i;
           i--;
           continue;
@@ -159,40 +159,40 @@ export class ConcatenatedJSONParseStream
 
         switch (char) {
           case '"':
-            this.#readingString = true;
-            this.#escapeNext = false;
+            readingString = true;
+            escapeNext = false;
             break;
           case "{":
           case "[":
-            this.#nestCount++;
+            nestCount++;
             break;
           case "}":
           case "]":
-            this.#nestCount--;
+            nestCount--;
             break;
         }
 
         // parse object or array
         if (
-          this.#hasValue && this.#nestCount === 0 &&
+          hasValue && nestCount === 0 &&
           (char === "}" || char === "]")
         ) {
-          yield parse(this.#targetString + string.slice(sliceStart, i + 1));
-          this.#hasValue = false;
-          this.#targetString = "";
+          yield parse(targetString + string.slice(sliceStart, i + 1));
+          hasValue = false;
+          targetString = "";
           sliceStart = i + 1;
           continue;
         }
 
-        if (!this.#hasValue && !isBrankChar(char)) {
+        if (!hasValue && !isBrankChar(char)) {
           // We want to ignore the character string with only blank, so if there is a character other than blank, record it.
-          this.#hasValue = true;
+          hasValue = true;
         }
       }
-      this.#targetString += string.slice(sliceStart);
+      targetString += string.slice(sliceStart);
     }
-    if (this.#hasValue) {
-      yield parse(this.#targetString);
+    if (hasValue) {
+      yield parse(targetString);
     }
   }
 }

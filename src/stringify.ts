@@ -15,7 +15,7 @@ export interface StringifyStreamOptions {
  *
  * ```ts
  * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+ * import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
  *
  * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,
@@ -58,7 +58,7 @@ export class JSONLinesStringifyStream extends TransformStream<unknown, string> {
  *
  * ```ts
  * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+ * import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
  *
  * const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
  *   create: true,

@@ -37,7 +37,7 @@ import {
   ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
   JSONLinesStringifyStream,
-} from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+} from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 ```
 
 ### browser
@@ -48,7 +48,7 @@ import {
   ConcatenatedJSONStringifyStream,
   JSONLinesParseStream,
   JSONLinesStringifyStream,
-} from "https://deno.land/x/jsonlines@v1.2.0/js/mod.js";
+} from "https://deno.land/x/jsonlines@v1.2.1/js/mod.js";
 ```
 
 ### Node.js
@@ -86,10 +86,10 @@ A working example can be found at [./testdata/test.ts](./testdata/test.ts).
 ```
 
 ```ts
-import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v1.2.0/testdata/json-lines.jsonl",
+  "https://deno.land/x/jsonlines@v1.2.1/testdata/json-lines.jsonl",
 );
 
 const readable = body!
@@ -119,10 +119,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v1.2.0/testdata/json-seq.json-seq",
+  "https://deno.land/x/jsonlines@v1.2.1/testdata/json-seq.json-seq",
 );
 
 const recordSeparator = "\x1E";
@@ -144,10 +144,10 @@ for await (const data of readable) {
 ```
 
 ```ts
-import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const { body } = await fetch(
-  "https://deno.land/x/jsonlines@v1.2.0/testdata/concat-json.concat-json",
+  "https://deno.land/x/jsonlines@v1.2.1/testdata/concat-json.concat-json",
 );
 
 const readable = body!
@@ -163,7 +163,7 @@ for await (const data of readable) {
 
 ```ts
 import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
-import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
   create: true,
@@ -181,7 +181,7 @@ readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
 
 ```ts
 import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
-import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { JSONLinesStringifyStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const recordSeparator = "\x1E";
 const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
@@ -200,7 +200,7 @@ readableStreamFromIterable([{ foo: "bar" }, { baz: 100 }])
 
 ```ts
 import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
-import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
+import { ConcatenatedJSONStringifyStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
 
 const file = await Deno.open(new URL("./tmp.concat-json", import.meta.url), {
   create: true,

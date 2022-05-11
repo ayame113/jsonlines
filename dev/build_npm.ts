@@ -26,7 +26,7 @@ await build({
   package: {
     // package.json properties
     name: "jsonlines-web",
-    version: "v1.2.0",
+    version: "v1.2.1",
     description: "Web stream based jsonlines decoder/encoder.",
     license: "MIT",
     repository: {

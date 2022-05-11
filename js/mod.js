@@ -124,71 +124,71 @@ class ConcatenatedJSONParseStream {
     writable;
     readable;
     constructor(options = {}){
-        const { writable , readable  } = transformStreamFromGeneratorFunction(this.#concatenatedJSONIterator.bind(this), options.writableStrategy, options.readableStrategy);
+        const { writable , readable  } = transformStreamFromGeneratorFunction(this.#concatenatedJSONIterator, options.writableStrategy, options.readableStrategy);
         this.writable = writable;
         this.readable = readable;
     }
-    #targetString = "";
-    #hasValue = false;
-    #nestCount = 0;
-    #readingString = false;
-    #escapeNext = false;
     async *#concatenatedJSONIterator(src) {
+        let targetString = "";
+        let hasValue = false;
+        let nestCount = 0;
+        let readingString = false;
+        let escapeNext = false;
         for await (const string of src){
             let sliceStart = 0;
             for(let i = 0; i < string.length; i++){
                 const __char = string[i];
-                if (this.#readingString) {
-                    if (__char === '"' && !this.#escapeNext) {
-                        this.#readingString = false;
-                        if (this.#nestCount === 0 && this.#hasValue) {
-                            yield parse(this.#targetString + string.slice(sliceStart, i + 1));
-                            this.#hasValue = false;
-                            this.#targetString = "";
+                if (readingString) {
+                    if (__char === '"' && !escapeNext) {
+                        readingString = false;
+                        if (nestCount === 0 && hasValue) {
+                            yield parse(targetString + string.slice(sliceStart, i + 1));
+                            hasValue = false;
+                            targetString = "";
                             sliceStart = i + 1;
                         }
                     }
-                    this.#escapeNext = !this.#escapeNext && __char === "\\";
+                    escapeNext = !escapeNext && __char === "\\";
                     continue;
                 }
-                if (this.#hasValue && this.#nestCount === 0 && (__char === "{" || __char === "[" || __char === '"' || __char === " ")) {
-                    yield parse(this.#targetString + string.slice(sliceStart, i));
-                    this.#hasValue = false;
-                    this.#readingString = false;
-                    this.#targetString = "";
+                if (hasValue && nestCount === 0 && (__char === "{" || __char === "[" || __char === '"' || __char === " ")) {
+                    yield parse(targetString + string.slice(sliceStart, i));
+                    hasValue = false;
+                    readingString = false;
+                    targetString = "";
                     sliceStart = i;
                     i--;
                     continue;
                 }
                 switch(__char){
                     case '"':
-                        this.#readingString = true;
-                        this.#escapeNext = false;
+                        readingString = true;
+                        escapeNext = false;
                         break;
                     case "{":
                     case "[":
-                        this.#nestCount++;
+                        nestCount++;
                         break;
                     case "}":
                     case "]":
-                        this.#nestCount--;
+                        nestCount--;
                         break;
                 }
-                if (this.#hasValue && this.#nestCount === 0 && (__char === "}" || __char === "]")) {
-                    yield parse(this.#targetString + string.slice(sliceStart, i + 1));
-                    this.#hasValue = false;
-                    this.#targetString = "";
+                if (hasValue && nestCount === 0 && (__char === "}" || __char === "]")) {
+                    yield parse(targetString + string.slice(sliceStart, i + 1));
+                    hasValue = false;
+                    targetString = "";
                     sliceStart = i + 1;
                     continue;
                 }
-                if (!this.#hasValue && !isBrankChar(__char)) {
-                    this.#hasValue = true;
+                if (!hasValue && !isBrankChar(__char)) {
+                    hasValue = true;
                 }
             }
-            this.#targetString += string.slice(sliceStart);
+            targetString += string.slice(sliceStart);
         }
-        if (this.#hasValue) {
-            yield parse(this.#targetString);
+        if (hasValue) {
+            yield parse(targetString);
         }
     }
 }
