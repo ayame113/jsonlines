@@ -33,7 +33,7 @@ type _QueuingStrategy<T> = QueuingStrategy<T | undefined>;
  * @param readableStrategy An object that optionally defines a queuing strategy for the stream.
  */
 export function transformStreamFromGeneratorFunction<I, O>(
-  transformer: (src: AsyncIterable<I>) => Iterable<O> | AsyncIterable<O>,
+  transformer: (src: ReadableStream<I>) => Iterable<O> | AsyncIterable<O>,
   writableStrategy?: _QueuingStrategy<I>,
   readableStrategy?: _QueuingStrategy<O>,
 ): TransformStream<I, O> {
