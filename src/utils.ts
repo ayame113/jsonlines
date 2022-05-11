@@ -13,7 +13,7 @@ type _QueuingStrategy<T> = QueuingStrategy<T | undefined>;
  *
  * ```ts
  * import { readableStreamFromIterable } from "https://deno.land/std@0.138.0/streams/mod.ts";
- * import { transformStreamFromGeneratorFunction } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
+ * import { transformStreamFromGeneratorFunction } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
  *
  * const reader = readableStreamFromIterable([0, 1, 2])
  *   .pipeThrough(transformStreamFromGeneratorFunction(async function* (src) {

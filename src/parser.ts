@@ -23,7 +23,7 @@ export interface ParseStreamOptions {
  * stream to parse JSONLines.
  *
  * ```ts
- * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
+ * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
  *
  * const url = new URL("./testdata/json-lines.jsonl", import.meta.url);
  * const { body } = await fetch(`${url}`);
@@ -79,7 +79,7 @@ export class JSONLinesParseStream
  * stream to parse concatenated JSON.
  *
  * ```ts
- * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.1.0/mod.ts";
+ * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.0/mod.ts";
  *
  * const url = new URL("./testdata/concat-json.concat-json", import.meta.url);
  * const { body } = await fetch(`${url}`);
