@@ -1,17 +1,11 @@
 import { TextDelimiterStream } from "https://deno.land/std@0.138.0/streams/delimiter.ts";
 import { JSONValue, transformStreamFromGeneratorFunction } from "./utils.ts";
 
-// implemented to be streamed as:
-// WritableStream -> ReadableStream(1) -> AsyncIterator -> ReadableStream(2)
-// ReadableStream(2).pull called, then call AsyncIterator.next.
-// AsyncIterator.next called, then call ReadableStream(1).pull.
-// ReadableStream(1) and WritableStream are buffered by TransformStream.
-
 // avoid dnt typecheck error
 type _QueuingStrategy<T> = QueuingStrategy<T | undefined>;
 
 export interface ParseStreamOptions {
-  /**a character to separate JSON. The character length must be 1. The default is '\n'. */
+  /**a character to separate JSON. The default is '\n'. */
   readonly separator?: string;
   /** Controls the buffer of the TransformStream used internally. Check https://developer.mozilla.org/en-US/docs/Web/API/TransformStream/TransformStream. */
   readonly writableStrategy?: _QueuingStrategy<string>;
@@ -20,7 +14,7 @@ export interface ParseStreamOptions {
 }
 
 /**
- * stream to parse JSONLines.
+ * stream to parse [JSON lines](https://jsonlines.org/), [NDJSON](http://ndjson.org/) and [JSON Text Sequences](https://datatracker.ietf.org/doc/html/rfc7464).
  *
  * ```ts
  * import { JSONLinesParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
@@ -74,7 +68,7 @@ export class JSONLinesParseStream
 }
 
 /**
- * stream to parse concatenated JSON.
+ * stream to parse [Concatenated JSON](https://en.wikipedia.org/wiki/JSON_streaming#Concatenated_JSON).
  *
  * ```ts
  * import { ConcatenatedJSONParseStream } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
@@ -141,7 +135,7 @@ export class ConcatenatedJSONParseStream
 
         // Parses number, true, false, null with a nesting level of 0.
         // example: 'null["foo"]' => null, ["foo"]
-        // example: 'false{"foo": "bar"}' => null, {foo: "bar"}
+        // example: 'false{"foo": "bar"}' => false, {foo: "bar"}
         if (
           hasValue && nestCount === 0 &&
           (char === "{" || char === "[" || char === '"' || char === " ")
