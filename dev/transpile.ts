@@ -1,4 +1,4 @@
-import { fromFileUrl } from "https://deno.land/std@0.138.0/path/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.140.0/path/mod.ts";
 
 const input = fromFileUrl(new URL("../mod.ts", import.meta.url));
 const output = fromFileUrl(new URL("../js/mod.js", import.meta.url));
