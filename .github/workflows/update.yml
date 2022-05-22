@@ -9,6 +9,7 @@ on:
 
 jobs:
   update-deno-dependencies:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
@@ -31,6 +32,7 @@ jobs:
           body: |-
             Some external modules are stale.
             <details><summary>Details</summary><div>
+            
             ```
             ${{ steps.run-deno-udd.outputs.UDD_RESULT }}
             ```
