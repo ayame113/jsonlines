@@ -17,9 +17,31 @@ await build({
         name: "stream/web",
       },
       globalNames: [
+        "WritableStream",
         "ReadableStream",
         "TransformStream",
-        "WritableStream",
+        {
+          name: "QueuingStrategy",
+          typeOnly: true,
+        },
+        {
+          name: "WritableStreamDefaultWriter",
+          typeOnly: true,
+        },
+        {
+          name: "ReadableStreamDefaultReader",
+          typeOnly: true,
+        },
+        {
+          name: "TransformStreamDefaultController",
+          typeOnly: true,
+        },
+      ],
+    }, {
+      module: "util",
+      globalNames: [
+        "TextEncoder",
+        "TextDecoder",
       ],
     }],
   },

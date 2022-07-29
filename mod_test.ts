@@ -38,10 +38,10 @@ async function assertValidParse(
 async function assertInvalidParse(
   transform: typeof ConcatenatedJSONParseStream | typeof JSONLinesParseStream,
   chunks: string[],
-  options?: ParseStreamOptions,
+  options: ParseStreamOptions,
   // deno-lint-ignore no-explicit-any
-  ErrorClass?: (new (...args: any[]) => Error) | undefined,
-  msgIncludes?: string | undefined,
+  ErrorClass: new (...args: any[]) => Error,
+  msgIncludes: string | undefined,
 ) {
   const r = new ReadableStream<string>({
     start(controller) {
@@ -88,10 +88,10 @@ async function assertInvalidStringify(
     | typeof ConcatenatedJSONStringifyStream
     | typeof JSONLinesStringifyStream,
   chunks: unknown[],
-  options?: StringifyStreamOptions,
+  options: StringifyStreamOptions,
   // deno-lint-ignore no-explicit-any
-  ErrorClass?: (new (...args: any[]) => Error) | undefined,
-  msgIncludes?: string | undefined,
+  ErrorClass: new (...args: any[]) => Error,
+  msgIncludes: string | undefined,
 ) {
   const r = new ReadableStream<unknown>({
     start(controller) {

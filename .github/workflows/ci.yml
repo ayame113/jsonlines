@@ -45,3 +45,14 @@ jobs:
         with:
           file: ./coverage.lcov
           fail_ci_if_error: true
+    Type-Check:
+      runs-on: ubuntu-latest
+      steps:
+        - name: Git Checkout Module
+          uses: actions/checkout@v2
+        - name: Use Deno
+          uses: denoland/setup-deno@v1
+          with:
+            deno-version: v1.x
+        - name: Bundle Check
+          run: deno task test:bundle

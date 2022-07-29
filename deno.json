@@ -7,6 +7,7 @@
     "fmt": "deno fmt",
     "check": "deno check ./mod.ts",
     "bundle": "deno run --allow-run --allow-read --unstable ./dev/transpile.ts",
+    "test:bundle": "deno run --allow-run --allow-read --unstable ./dev/transpile_check.ts",
     "build-npm": "deno run --allow-read --allow-write --allow-net --allow-env --allow-run ./dev/build_npm.ts"
   },
   "lint": {
