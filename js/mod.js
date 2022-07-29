@@ -3,18 +3,23 @@
 // This code was bundled using `deno bundle` and it's not recommended to edit it manually
 
 if (typeof ReadableStream.prototype[Symbol.asyncIterator] !== "function") {
-    ReadableStream.prototype[Symbol.asyncIterator] = async function*() {
-        const reader = this.getReader();
-        try {
-            while(true){
-                const { done , value  } = await reader.read();
-                if (done) return;
-                yield value;
+    Object.defineProperty(ReadableStream.prototype, Symbol.asyncIterator, {
+        async *value () {
+            const reader = this.getReader();
+            try {
+                while(true){
+                    const { done , value  } = await reader.read();
+                    if (done) return;
+                    yield value;
+                }
+            } finally{
+                reader.releaseLock();
             }
-        } finally{
-            reader.releaseLock();
-        }
-    };
+        },
+        writable: true,
+        enumerable: false,
+        configurable: true
+    });
 }
 function transformStreamFromGeneratorFunction(transformer, writableStrategy, readableStrategy) {
     const { writable , readable ,  } = new TransformStream(undefined, writableStrategy);
@@ -47,28 +52,28 @@ class TextDelimiterStream extends TransformStream {
     #delimLPS;
     constructor(delimiter){
         super({
-            transform: (chunk5, controller7)=>{
-                this.#handle(chunk5, controller7);
+            transform: (chunk, controller)=>{
+                this.#handle(chunk, controller);
             },
-            flush: (controller8)=>{
-                controller8.enqueue(this.#buf);
+            flush: (controller)=>{
+                controller.enqueue(this.#buf);
             }
         });
         this.#delimiter = delimiter;
         this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
     }
-     #handle(chunk6, controller9) {
-        this.#buf += chunk6;
-        let localIndex = 0;
+     #handle(chunk3, controller3) {
+        this.#buf += chunk3;
+        let localIndex1 = 0;
         while(this.#inspectIndex < this.#buf.length){
-            if (chunk6[localIndex] === this.#delimiter[this.#matchIndex]) {
+            if (chunk3[localIndex1] === this.#delimiter[this.#matchIndex]) {
                 this.#inspectIndex++;
-                localIndex++;
+                localIndex1++;
                 this.#matchIndex++;
                 if (this.#matchIndex === this.#delimiter.length) {
-                    const matchEnd = this.#inspectIndex - this.#delimiter.length;
-                    const readyString = this.#buf.slice(0, matchEnd);
-                    controller9.enqueue(readyString);
+                    const matchEnd1 = this.#inspectIndex - this.#delimiter.length;
+                    const readyString = this.#buf.slice(0, matchEnd1);
+                    controller3.enqueue(readyString);
                     this.#buf = this.#buf.slice(this.#inspectIndex);
                     this.#inspectIndex = 0;
                     this.#matchIndex = 0;
@@ -76,7 +81,7 @@ class TextDelimiterStream extends TransformStream {
             } else {
                 if (this.#matchIndex === 0) {
                     this.#inspectIndex++;
-                    localIndex++;
+                    localIndex1++;
                 } else {
                     this.#matchIndex = this.#delimLPS[this.#matchIndex - 1];
                 }
