@@ -13,7 +13,7 @@ if (!bundleSuccess) {
   throw new Error("deno bundle: failed");
 }
 
-const actual = await Deno.readTextFile(output);
-const expected = new TextDecoder().decode(stdout);
+const actual = (await Deno.readTextFile(output)).trim();
+const expected = new TextDecoder().decode(stdout).trim();
 
 assertEquals(actual, expected, "please run `deno task bundle` before commit");
