@@ -1,5 +1,5 @@
-import { fromFileUrl } from "https://deno.land/std@0.149.0/path/mod.ts";
-import { build, emptyDir } from "https://deno.land/x/dnt@0.28.0/mod.ts";
+import { fromFileUrl } from "https://deno.land/std@0.157.0/path/mod.ts";
+import { build, emptyDir } from "https://deno.land/x/dnt@0.30.0/mod.ts";
 
 const outDir = fromFileUrl(new URL("./npm/", import.meta.url));
 const projectRootDir = fromFileUrl(new URL("../", import.meta.url));

@@ -1,4 +1,4 @@
-import { TextDelimiterStream } from "https://deno.land/std@0.149.0/streams/delimiter.ts";
+import { TextDelimiterStream } from "https://deno.land/std@0.157.0/streams/delimiter.ts";
 import { JSONValue, transformStreamFromGeneratorFunction } from "./utils.ts";
 
 // avoid dnt typecheck error
