@@ -20,5 +20,6 @@
       "exclude": ["./js/"]
     }
   },
-  "importMap": "./import-map.json"
+  "importMap": "./import-map.json",
+  "lock": false
 }
