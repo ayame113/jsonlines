@@ -67,7 +67,8 @@ class TextDelimiterStream extends TransformStream {
     #inspectIndex = 0;
     #matchIndex = 0;
     #delimLPS;
-    constructor(delimiter){
+    #disp;
+    constructor(delimiter, options){
         super({
             transform: (chunk, controller)=>{
                 this.#handle(chunk, controller);
@@ -78,6 +79,7 @@ class TextDelimiterStream extends TransformStream {
         });
         this.#delimiter = delimiter;
         this.#delimLPS = createLPS(new TextEncoder().encode(delimiter));
+        this.#disp = options?.disposition ?? "discard";
     }
     #handle(chunk, controller) {
         this.#buf += chunk;
@@ -88,11 +90,13 @@ class TextDelimiterStream extends TransformStream {
                 localIndex++;
                 this.#matchIndex++;
                 if (this.#matchIndex === this.#delimiter.length) {
-                    const matchEnd = this.#inspectIndex - this.#delimiter.length;
-                    const readyString = this.#buf.slice(0, matchEnd);
-                    controller.enqueue(readyString);
-                    this.#buf = this.#buf.slice(this.#inspectIndex);
-                    this.#inspectIndex = 0;
+                    const start = this.#inspectIndex - this.#delimiter.length;
+                    const end = this.#disp === "suffix" ? this.#inspectIndex : start;
+                    const copy = this.#buf.slice(0, end);
+                    controller.enqueue(copy);
+                    const shift = this.#disp == "prefix" ? start : this.#inspectIndex;
+                    this.#buf = this.#buf.slice(shift);
+                    this.#inspectIndex = this.#disp == "prefix" ? this.#delimiter.length : 0;
                     this.#matchIndex = 0;
                 }
             } else {
