@@ -31,8 +31,8 @@ export interface ParseStreamOptions {
  * }
  * ```
  */
-export class JSONLinesParseStream
-  implements TransformStream<string, JSONValue> {
+export class JSONLinesParseStream<I = string, O=JSONValue>
+  implements TransformStream<I, O> {
   readonly writable: WritableStream<string>;
   readonly readable: ReadableStream<JSONValue>;
   /**
