@@ -1,5 +1,5 @@
-import { assertEquals } from "https://deno.land/std@0.185.0/testing/asserts.ts";
-import { fromFileUrl } from "https://deno.land/std@0.185.0/path/mod.ts";
+import { assertEquals } from "https://deno.land/std@0.220.1/testing/asserts.ts";
+import { fromFileUrl } from "https://deno.land/std@0.220.1/path/mod.ts";
 
 const input = fromFileUrl(new URL("../mod.ts", import.meta.url));
 const output = fromFileUrl(new URL("../js/mod.js", import.meta.url));
