@@ -12,8 +12,8 @@ type _QueuingStrategy<T> = QueuingStrategy<T | undefined>;
  * Convert the generator function into a TransformStream.
  *
  * ```ts
- * import { readableStreamFromIterable } from "https://deno.land/std@0.185.0/streams/mod.ts";
- * import { transformStreamFromGeneratorFunction } from "https://deno.land/x/jsonlines@v1.2.1/mod.ts";
+ * import { readableStreamFromIterable } from "https://deno.land/std@0.220.1/streams/mod.ts";
+ * import { transformStreamFromGeneratorFunction } from "https://deno.land/x/jsonlines@v1.2.2/mod.ts";
  *
  * const reader = readableStreamFromIterable([0, 1, 2])
  *   .pipeThrough(transformStreamFromGeneratorFunction(async function* (src) {

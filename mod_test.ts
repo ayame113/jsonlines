@@ -1,8 +1,8 @@
 import {
   assertEquals,
   assertRejects,
-} from "https://deno.land/std@0.185.0/testing/asserts.ts";
-import { readableStreamFromIterable } from "https://deno.land/std@0.185.0/streams/readable_stream_from_iterable.ts";
+} from "https://deno.land/std@0.220.1/testing/asserts.ts";
+import { readableStreamFromIterable } from "https://deno.land/std@0.220.1/streams/readable_stream_from_iterable.ts";
 import {
   ConcatenatedJSONParseStream,
   ConcatenatedJSONStringifyStream,
